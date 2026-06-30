@@ -1,0 +1,1898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Luminal Browser</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+:root {
+    --bg-deep: #0a0a0d;
+    --bg-chrome: rgba(18, 18, 22, 0.78);
+    --bg-tab: rgba(255, 255, 255, 0.03);
+    --bg-tab-hover: rgba(255, 255, 255, 0.07);
+    --bg-tab-active: rgba(255, 255, 255, 0.11);
+    --bg-input: rgba(255, 255, 255, 0.05);
+    --bg-input-focus: rgba(255, 255, 255, 0.09);
+    --border: rgba(255, 255, 255, 0.07);
+    --border-strong: rgba(255, 255, 255, 0.14);
+    --ink: #f1f1f3;
+    --ink-dim: #9b9ba3;
+    --ink-faint: #5a5a62;
+    --accent: #4f8cff;
+    --accent-glow: rgba(79, 140, 255, 0.18);
+    --danger: #ff5a6d;
+    --good: #38d18f;
+    --shell-bg: radial-gradient(at 30% 0%, #161620 0%, #0a0a0d 70%);
+    --bg-tabstrip: rgba(10,10,13,0.6);
+    --radius: 12px;
+    --radius-sm: 8px;
+    --radius-pill: 999px;
+    --shadow: 0 18px 40px rgba(0,0,0,0.42);
+    --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+html.theme-light {
+    --bg-deep: #f3f4f6;
+    --bg-chrome: rgba(255, 255, 255, 0.86);
+    --bg-tab: rgba(0, 0, 0, 0.04);
+    --bg-tab-hover: rgba(0, 0, 0, 0.07);
+    --bg-tab-active: rgba(0, 0, 0, 0.11);
+    --bg-input: rgba(0, 0, 0, 0.05);
+    --bg-input-focus: rgba(0, 0, 0, 0.09);
+    --border: rgba(0, 0, 0, 0.10);
+    --border-strong: rgba(0, 0, 0, 0.18);
+    --ink: #1a1a1f;
+    --ink-dim: #55555f;
+    --ink-faint: #8a8a94;
+    --accent: #2f6bff;
+    --accent-glow: rgba(47, 107, 255, 0.16);
+    --danger: #d22f44;
+    --good: #1f9e6a;
+    --shell-bg: radial-gradient(at 30% 0%, #ffffff 0%, #eceef3 70%);
+    --bg-tabstrip: rgba(255,255,255,0.72);
+    --shadow: 0 18px 40px rgba(0,0,0,0.14);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Inter', system-ui, -apple-system, sans-serif; background: var(--bg-deep); color: var(--ink); -webkit-font-smoothing: antialiased; }
+button { font-family: inherit; }
+
+#progress { position: fixed; top: 0; left: 0; height: 2px; background: linear-gradient(90deg, var(--accent), #8b5cf6); transition: width .25s var(--ease), opacity .3s ease; z-index: 9999; width: 0; opacity: 0; box-shadow: 0 0 8px var(--accent-glow); }
+
+.shell { display: flex; flex-direction: column; height: 100vh; background: var(--shell-bg); }
+
+.tabstrip { display: flex; align-items: flex-end; padding: 8px 8px 0; gap: 2px; overflow-x: auto; scrollbar-width: none; background: var(--bg-tabstrip); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); position: relative; }
+.tabstrip::-webkit-scrollbar { display: none; }
+.tabstrip::after { content: ''; position: absolute; right: 0; top: 0; bottom: 0; width: 30px; background: linear-gradient(90deg, transparent, var(--bg-tabstrip)); pointer-events: none; }
+
+.tab { display: flex; align-items: center; gap: 8px; min-width: 140px; max-width: 220px; padding: 8px 10px; background: var(--bg-tab); border-radius: 10px 10px 0 0; cursor: pointer; transition: background .15s var(--ease), transform .15s var(--ease); position: relative; flex-shrink: 0; user-select: none; border-top: 1px solid transparent; }
+.tab:hover:not(.active) { background: var(--bg-tab-hover); }
+.tab.active { background: var(--bg-tab-active); border-top-color: var(--accent); }
+.tab.active::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px; background: var(--bg-tab-active); }
+.tab.dragging { opacity: 0.45; }
+.tab.drag-over-left { box-shadow: inset 2px 0 0 0 var(--accent); }
+.tab.drag-over-right { box-shadow: inset -2px 0 0 0 var(--accent); }
+.tab-fav { width: 16px; height: 16px; flex-shrink: 0; border-radius: 4px; object-fit: cover; opacity: 0.95; }
+.tab-fav.placeholder { display: flex; align-items: center; justify-content: center; background: var(--accent-glow); color: var(--accent); font-size: 10px; }
+.tab-title { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12.5px; font-weight: 400; color: var(--ink); }
+.tab-x { width: 18px; height: 18px; border: 0; background: transparent; color: var(--ink-dim); cursor: pointer; border-radius: 5px; font-size: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; opacity: 0; transition: opacity .15s, background .15s, color .15s; }
+.tab:hover .tab-x, .tab.active .tab-x { opacity: 1; }
+.tab-x:hover { background: rgba(255,90,109,0.22); color: #fff; }
+
+.tab-add { width: 32px; height: 32px; margin: 4px 4px 0; display: flex; align-items: center; justify-content: center; background: transparent; border: 0; color: var(--ink-dim); border-radius: 8px; cursor: pointer; flex-shrink: 0; transition: background .15s, color .15s; }
+.tab-add:hover { background: var(--bg-tab-hover); color: var(--ink); }
+
+.toolbar { display: flex; align-items: center; gap: 6px; padding: 8px 12px; background: var(--bg-chrome); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); position: relative; z-index: 20; }
+.tb-btn { width: 34px; height: 34px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: transparent; border: 0; color: var(--ink-dim); border-radius: 8px; cursor: pointer; transition: background .15s, color .15s, transform .1s; font-size: 13px; }
+.tb-btn:hover:not(:disabled) { background: var(--bg-tab-hover); color: var(--ink); }
+.tb-btn:active:not(:disabled) { transform: scale(0.94); }
+.tb-btn:disabled { color: var(--ink-faint); cursor: default; opacity: 0.5; }
+.tb-btn.active { background: var(--accent-glow); color: var(--accent); }
+
+.address-wrap { flex: 1; position: relative; margin: 0 4px; }
+.address-shell { display: flex; align-items: center; gap: 8px; background: var(--bg-input); border: 1px solid transparent; border-radius: var(--radius-pill); padding: 0 14px; height: 34px; transition: background .15s, border-color .15s, box-shadow .15s; }
+.address-shell:focus-within { background: var(--bg-input-focus); border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+.address-secure { color: var(--good); font-size: 11px; flex-shrink: 0; }
+.address-secure.warn { color: var(--ink-dim); }
+#address { flex: 1; background: transparent; border: 0; color: var(--ink); font-size: 13px; outline: none; min-width: 0; font-family: inherit; }
+#address::placeholder { color: var(--ink-faint); }
+.address-suggest { position: absolute; top: calc(100% + 6px); left: 12px; right: 12px; background: rgba(20,20,25,0.95); backdrop-filter: blur(20px); border: 1px solid var(--border-strong); border-radius: 12px; box-shadow: var(--shadow); padding: 6px; z-index: 200; display: none; max-height: 320px; overflow-y: auto; }
+.address-suggest.open { display: block; }
+.sug-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; cursor: pointer; font-size: 13px; }
+.sug-row:hover, .sug-row.focus { background: var(--bg-tab-hover); }
+.sug-icon { width: 16px; color: var(--ink-dim); font-size: 12px; flex-shrink: 0; text-align: center; }
+.sug-text { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ink); }
+.sug-sub { color: var(--ink-faint); font-size: 11px; flex-shrink: 0; }
+
+.proxy-pill { position: relative; display: inline-flex; align-items: center; gap: 6px; padding: 0 8px 0 10px; height: 30px; flex-shrink: 0; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-pill); font-size: 11.5px; color: var(--ink-dim); cursor: pointer; transition: background .15s, color .15s, border-color .15s; user-select: none; outline: none; z-index: 100000}
+.proxy-pill:hover, .proxy-pill[data-open="1"] { background: var(--bg-input-focus); color: var(--ink); border-color: rgba(255,255,255,0.18); z-index: 100000}
+.proxy-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 6px var(--accent-glow); z-index: 100000}
+.proxy-pill__label { font-weight: 500; letter-spacing: -.005em; z-index: 100000}
+.proxy-pill__chev { width: 10px; height: 10px; opacity: .55; transition: transform .15s ease, opacity .15s ease; margin-left: 2px; z-index: 100000}
+.proxy-pill:hover .proxy-pill__chev, .proxy-pill[data-open="1"] .proxy-pill__chev { opacity: .9; z-index: 100000}
+.proxy-pill[data-open="1"] .proxy-pill__chev { transform: rotate(180deg); z-index: 100000}
+.proxy-popover { position: absolute; top: calc(100% + 6px); right: 0; min-width: 168px; padding: 6px; background: rgba(28, 28, 32, 0.78); backdrop-filter: blur(28px) saturate(160%); -webkit-backdrop-filter: blur(28px) saturate(160%); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; box-shadow: 0 12px 32px rgba(0,0,0,0.45); z-index: 1000; display: none; flex-direction: column; gap: 2px; }
+.proxy-popover[data-open="1"] { display: flex; }
+.proxy-popover__opt { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 10px; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 12.5px; text-align: left; border-radius: 8px; cursor: pointer; transition: background .12s ease; }
+.proxy-popover__opt:hover { background: rgba(255,255,255,0.08); }
+.proxy-popover__opt[aria-selected="true"] { background: rgba(74,144,226,0.16); color: #fff; }
+.proxy-popover__opt-name { display: flex; flex-direction: column; gap: 1px; }
+.proxy-popover__opt-sub { font-size: 10.5px; color: var(--ink-faint); }
+.proxy-popover__check { width: 12px; height: 12px; opacity: 0; transition: opacity .12s; color: var(--accent); }
+.proxy-popover__opt[aria-selected="true"] .proxy-popover__check { opacity: 1; }
+
+.bookmarks-bar { display: flex; gap: 4px; padding: 6px 12px; background: var(--bg-chrome); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; }
+.bookmarks-bar.hidden { display: none; }
+.bookmarks-bar::-webkit-scrollbar { display: none; }
+.bm { display: flex; align-items: center; gap: 6px; padding: 4px 10px; background: transparent; border: 0; color: var(--ink-dim); border-radius: 6px; cursor: pointer; font-size: 12px; flex-shrink: 0; transition: background .15s, color .15s; max-width: 160px; }
+.bm:hover { background: var(--bg-tab-hover); color: var(--ink); }
+.bm img { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
+.bm-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bm-empty { color: var(--ink-faint); font-size: 11.5px; padding: 4px 4px; font-style: italic; }
+
+.viewport { flex: 1; position: relative; overflow: hidden; background: var(--bg-deep); }
+.page { position: absolute; inset: 0; display: none; }
+.page.active { display: flex; flex-direction: column; }
+.page iframe { width: 100%; height: 100%; border: 0; background: var(--bg-deep); }
+.viewport.is-split .page { display: none; }
+.viewport.is-split .page.page--split-left, .viewport.is-split .page.page--split-right { display: flex; flex-direction: column; }
+.viewport.is-split .page.page--split-left { left: 0; right: auto; width: calc(var(--split, 50%) - 4px); }
+.viewport.is-split .page.page--split-right { left: var(--split, 50%); right: 0; width: auto; }
+.viewport.is-split .page.pane-focused::after { content: ''; position: absolute; inset: 0; pointer-events: none; box-shadow: inset 0 0 0 2px var(--accent); z-index: 5; }
+.split-divider { position: absolute; top: 0; bottom: 0; width: 10px; left: var(--split, 50%); transform: translateX(-5px); cursor: col-resize; z-index: 60; }
+.split-divider::before { content: ''; position: absolute; top: 0; bottom: 0; left: 4px; width: 2px; background: var(--border); transition: background .12s, width .12s, left .12s; }
+.split-divider:hover::before, .split-divider.dragging::before { background: var(--accent); width: 3px; left: 3.5px; }
+.viewport.split-dragging iframe { pointer-events: none; }
+.tb-btn#split-btn.active { background: var(--accent-glow); color: var(--accent); }
+.spinner { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--bg-deep); }
+.spinner div { width: 26px; height: 26px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.12); border-top-color: var(--accent); animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.newtab { width: 100%; height: 100%; overflow-y: auto; padding: 36px 36px 60px; display: flex; flex-direction: column; align-items: center; gap: 28px; background: radial-gradient(at 50% -10%, rgba(79,140,255,0.10), transparent 50%), var(--bg-deep); }
+.nt-clock { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 24px; }
+.nt-time { font-size: 76px; font-weight: 300; letter-spacing: -3px; line-height: 1; font-feature-settings: 'tnum'; background: linear-gradient(180deg, #fff 30%, #b9c5ff 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+html.theme-light .nt-time { background: linear-gradient(180deg, var(--ink) 25%, var(--accent) 110%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.nt-sec { font-size: 22px; color: var(--ink-dim); font-weight: 300; font-feature-settings: 'tnum'; }
+.nt-meta { display: flex; gap: 18px; align-items: center; color: var(--ink-dim); font-size: 13px; margin-top: 4px; }
+.nt-meta .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--ink-faint); }
+
+.nt-search { width: 100%; max-width: 580px; position: relative; }
+.nt-search input { width: 100%; padding: 16px 22px 16px 50px; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-pill); color: var(--ink); font-size: 15px; outline: none; transition: background .18s, border-color .18s, box-shadow .18s; font-family: inherit; }
+.nt-search input:focus { background: var(--bg-input-focus); border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-glow); }
+.nt-search i { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); color: var(--ink-dim); font-size: 14px; pointer-events: none; }
+
+.nt-section { width: 100%; max-width: 920px; }
+.nt-section h4 { font-size: 11px; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; color: var(--ink-dim); margin: 0 0 12px; padding: 0 6px; display: flex; align-items: center; justify-content: space-between; }
+.nt-section h4 .nt-act { display: flex; gap: 4px; }
+.nt-section h4 button { background: transparent; border: 0; color: var(--ink-dim); font-size: 11px; cursor: pointer; padding: 4px 8px; border-radius: 6px; letter-spacing: normal; text-transform: none; font-weight: 400; }
+.nt-section h4 button:hover { background: var(--bg-tab-hover); color: var(--ink); }
+
+.tile-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+.tile { padding: 14px 10px; background: var(--bg-tab); border: 1px solid var(--border); border-radius: 14px; cursor: pointer; transition: all .18s var(--ease); display: flex; flex-direction: column; align-items: center; gap: 8px; position: relative; }
+.tile:hover { background: var(--bg-tab-hover); border-color: var(--border-strong); transform: translateY(-2px); }
+.tile-fav { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: var(--bg-input); flex-shrink: 0; overflow: hidden; }
+.tile-fav img { width: 24px; height: 24px; }
+.tile-fav .letter { font-size: 18px; font-weight: 500; color: var(--accent); }
+.tile-label { font-size: 12px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.tile-x { position: absolute; top: 4px; right: 4px; width: 18px; height: 18px; border-radius: 50%; background: rgba(0,0,0,0.5); color: #fff; border: 0; cursor: pointer; font-size: 9px; display: none; align-items: center; justify-content: center; }
+.tile:hover .tile-x { display: flex; }
+.tile-add { padding: 14px 10px; background: transparent; border: 1.5px dashed var(--border-strong); border-radius: 14px; cursor: pointer; transition: all .18s; display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--ink-dim); }
+.tile-add:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
+
+.tile-empty { color: var(--ink-faint); font-size: 13px; text-align: center; padding: 20px; }
+
+.menu-pop { position: absolute; top: 50px; right: 12px; min-width: 240px; background: rgba(20,20,25,0.95); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid var(--border-strong); border-radius: 12px; box-shadow: var(--shadow); padding: 6px; z-index: 300; display: none; }
+.menu-pop.open { display: block; }
+.menu-row { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; cursor: pointer; font-size: 13px; color: var(--ink); transition: background .15s; }
+.menu-row:hover { background: var(--bg-tab-hover); }
+.menu-row i { width: 16px; color: var(--ink-dim); font-size: 12px; }
+.menu-row .kbd { margin-left: auto; font-size: 10.5px; color: var(--ink-faint); font-family: 'JetBrains Mono', monospace; }
+.menu-divider { height: 1px; background: var(--border); margin: 4px 6px; }
+
+.history-pop { position: absolute; top: 50px; left: 100px; width: 380px; max-height: 500px; background: rgba(20,20,25,0.95); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid var(--border-strong); border-radius: 12px; box-shadow: var(--shadow); padding: 8px; z-index: 300; display: none; flex-direction: column; }
+.history-pop.open { display: flex; }
+.history-pop h5 { margin: 6px 8px 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--ink-dim); font-weight: 500; }
+.history-list { flex: 1; overflow-y: auto; }
+.hist-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; cursor: pointer; font-size: 12.5px; color: var(--ink); }
+.hist-row:hover { background: var(--bg-tab-hover); }
+.hist-row img { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
+.hist-row .hr-text { flex: 1; min-width: 0; }
+.hist-row .hr-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hist-row .hr-url { color: var(--ink-faint); font-size: 10.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.settings { width: 100%; height: 100%; overflow-y: auto; background: var(--bg-deep); display: flex; }
+.settings-nav { width: 220px; padding: 28px 12px; border-right: 1px solid var(--border); flex-shrink: 0; }
+.settings-nav h3 { margin: 0 12px 18px; font-size: 18px; font-weight: 500; }
+.settings-nav button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 12px; background: transparent; border: 0; color: var(--ink-dim); border-radius: 8px; cursor: pointer; font-size: 13px; text-align: left; transition: background .15s, color .15s; }
+.settings-nav button:hover { background: var(--bg-tab-hover); color: var(--ink); }
+.settings-nav button.active { background: var(--accent-glow); color: var(--accent); }
+.settings-nav button i { width: 16px; font-size: 12px; }
+.settings-body { flex: 1; padding: 36px 48px; max-width: 760px; }
+.settings-body h2 { margin: 0 0 6px; font-size: 22px; font-weight: 500; }
+.settings-body .subtitle { color: var(--ink-dim); font-size: 13px; margin: 0 0 28px; }
+.set-section { margin-bottom: 32px; }
+.set-section h3 { font-size: 14px; font-weight: 500; margin: 0 0 12px; color: var(--ink); }
+.set-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-top: 1px solid var(--border); gap: 16px; }
+.set-row:last-child { border-bottom: 1px solid var(--border); }
+.set-row .lbl { display: flex; flex-direction: column; gap: 4px; }
+.set-row .lbl b { font-size: 13px; font-weight: 500; }
+.set-row .lbl span { font-size: 12px; color: var(--ink-dim); }
+.set-row input[type=text], .set-row select { background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; color: var(--ink); font-size: 13px; outline: none; min-width: 200px; font-family: inherit; }
+.set-row input[type=text]:focus { border-color: var(--accent); }
+.set-btn { padding: 8px 14px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; color: var(--ink); font-size: 12.5px; cursor: pointer; transition: background .15s; font-family: inherit; }
+.set-btn:hover { background: var(--bg-input-focus); }
+.set-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.set-btn.primary:hover { background: #6fa1ff; }
+.set-btn.danger { color: var(--danger); border-color: rgba(255,90,109,0.3); }
+.set-btn.danger:hover { background: rgba(255,90,109,0.12); }
+
+.toggle { position: relative; width: 38px; height: 22px; flex-shrink: 0; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-slider { position: absolute; inset: 0; background: var(--bg-input); border: 1px solid var(--border); border-radius: 999px; cursor: pointer; transition: background .2s; }
+.toggle-slider::before { content: ''; position: absolute; left: 2px; top: 1px; width: 16px; height: 16px; background: var(--ink); border-radius: 50%; transition: transform .2s var(--ease), background .2s; }
+.toggle input:checked + .toggle-slider { background: var(--accent); border-color: var(--accent); }
+.toggle input:checked + .toggle-slider::before { transform: translateX(16px); background: #fff; }
+
+.override-list { display: flex; flex-direction: column; gap: 8px; }
+.ov-row { display: grid; grid-template-columns: 1fr 16px 1fr 80px 32px; gap: 8px; align-items: center; padding: 10px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 10px; }
+.ov-row.disabled { opacity: 0.45; }
+.ov-row input { background: var(--bg-deep); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; color: var(--ink); font-size: 12px; outline: none; font-family: 'JetBrains Mono', monospace; }
+.ov-row input:focus { border-color: var(--accent); }
+.ov-row .arrow { text-align: center; color: var(--ink-faint); font-size: 11px; }
+.ov-row select { background: var(--bg-deep); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; color: var(--ink); font-size: 11.5px; outline: none; font-family: inherit; }
+.ov-row .ov-x { width: 28px; height: 28px; background: transparent; border: 0; color: var(--ink-dim); border-radius: 6px; cursor: pointer; font-size: 11px; }
+.ov-row .ov-x:hover { background: rgba(255,90,109,0.18); color: var(--danger); }
+.ov-empty { padding: 20px; text-align: center; color: var(--ink-faint); font-size: 12.5px; background: var(--bg-input); border: 1px dashed var(--border-strong); border-radius: 10px; }
+.ov-add { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+
+.scrollbar { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.15) transparent; }
+.scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+.scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.13); border-radius: 99px; }
+.scrollbar::-webkit-scrollbar-track { background: transparent; }
+
+@media (max-width: 560px) {
+    .toolbar { gap: 4px; padding: 8px; }
+    .address-wrap { min-width: 0; flex-shrink: 1; margin: 0 2px; }
+    .tb-btn { width: 38px; height: 38px; }
+
+    #fwd, #home, #hist-btn, #split-btn, #bookmark-btn { display: none; }
+    .proxy-pill { height: 36px; padding: 0 8px; }
+    .proxy-pill__label { display: none; }
+
+    .proxy-popover, .menu-pop, .history-pop {
+        position: fixed; left: 8px; right: 8px; top: auto; bottom: 8px;
+        width: auto; min-width: 0; max-width: none; max-height: 70vh; overflow-y: auto;
+        z-index: 100001;
+    }
+}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div class="shell">
+    <div class="tabstrip" id="tabstrip">
+        <button class="tab-add" id="new-tab" title="New tab (Ctrl+T)"><i class="fa-solid fa-plus"></i></button>
+    </div>
+    <div class="toolbar">
+        <button class="tb-btn" id="back" title="Back (Alt+Left)"><i class="fa-solid fa-arrow-left"></i></button>
+        <button class="tb-btn" id="fwd" title="Forward (Alt+Right)"><i class="fa-solid fa-arrow-right"></i></button>
+        <button class="tb-btn" id="reload" title="Reload (Ctrl+R)"><i class="fa-solid fa-rotate-right"></i></button>
+        <button class="tb-btn" id="home" title="New Tab page"><i class="fa-solid fa-house"></i></button>
+        <button class="tb-btn" id="hist-btn" title="History"><i class="fa-solid fa-clock-rotate-left"></i></button>
+        <div class="address-wrap">
+            <div class="address-shell">
+                <i class="fa-solid fa-lock address-secure" id="secure"></i>
+                <input id="address" placeholder="Search or type a URL" autocomplete="off" spellcheck="false">
+            </div>
+            <div class="address-suggest scrollbar" id="suggest"></div>
+        </div>
+        <button class="tb-btn" id="bookmark-btn" title="Bookmark this page"><i class="fa-regular fa-star"></i></button>
+        <button class="tb-btn" id="split-btn" title="Split screen (two tabs side by side)"><i class="fa-solid fa-table-columns"></i></button>
+        <div class="proxy-pill" id="proxy" role="button" tabindex="0" title="Proxy backend" aria-haspopup="listbox" aria-expanded="false" data-value="scramjet2">
+            <span class="dot"></span>
+            <span class="proxy-pill__label">Scramjet v2</span>
+            <svg class="proxy-pill__chev" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 1l4 4 4-4"/></svg>
+            <div class="proxy-popover" id="proxy-popover" role="listbox" aria-label="Proxy backend">
+                <button type="button" class="proxy-popover__opt" data-value="scramjet2" role="option" aria-selected="true">
+                    <span class="proxy-popover__opt-name">Scramjet v2<span class="proxy-popover__opt-sub">Default · newest engine</span></span>
+                    <svg class="proxy-popover__check" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.5l2.5 2.5L10 3"/></svg>
+                </button>
+                <button type="button" class="proxy-popover__opt" data-value="dynamic" role="option" aria-selected="false">
+                    <span class="proxy-popover__opt-name">Dynamic<span class="proxy-popover__opt-sub">Use if others are blocked</span></span>
+                    <svg class="proxy-popover__check" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.5l2.5 2.5L10 3"/></svg>
+                </button>
+                <button type="button" class="proxy-popover__opt" data-value="uv" role="option" aria-selected="false">
+                    <span class="proxy-popover__opt-name">Ultraviolet<span class="proxy-popover__opt-sub">Fallback · better with logins</span></span>
+                    <svg class="proxy-popover__check" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.5l2.5 2.5L10 3"/></svg>
+                </button>
+            </div>
+        </div>
+        <button class="tb-btn" id="menu-btn" title="Menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+    </div>
+    <div class="bookmarks-bar" id="bm-bar"></div>
+    <div class="viewport" id="viewport"></div>
+</div>
+<div class="menu-pop" id="menu-pop">
+    <div class="menu-row" data-act="newtab"><i class="fa-solid fa-plus"></i>New tab<span class="kbd">Ctrl T</span></div>
+    <div class="menu-row" data-act="newwin"><i class="fa-solid fa-window-restore"></i>Open in OS window</div>
+    <div class="menu-divider"></div>
+    <div class="menu-row" data-act="bookmarks"><i class="fa-solid fa-bookmark"></i>Manage bookmarks</div>
+    <div class="menu-row" data-act="history"><i class="fa-solid fa-clock-rotate-left"></i>Full history</div>
+    <div class="menu-row" data-act="downloads"><i class="fa-solid fa-download"></i>Downloads</div>
+    <div class="menu-divider"></div>
+    <div class="menu-row" data-act="toggle-bm"><i class="fa-solid fa-eye"></i>Show bookmarks bar</div>
+    <div class="menu-row" data-act="allow-ads"><i class="fa-solid fa-shield-halved"></i><span id="menu-allow-label">Allow ads on this site</span></div>
+    <div class="menu-row" data-act="settings"><i class="fa-solid fa-gear"></i>Settings<span class="kbd">Ctrl ,</span></div>
+</div>
+<div class="history-pop" id="hist-pop">
+    <h5>Recent</h5>
+    <div class="history-list scrollbar" id="hist-list"></div>
+</div>
+
+<script>
+(function () {
+    const STORAGE = {
+        bookmarks: 'lumi_bm_v1',
+        history: 'lumi_hist_v1',
+        pinned: 'lumi_pin_v1',
+        recent: 'lumi_recent_v1',
+        prefs: 'lumi_calc_prefs_v1',
+        overrides: 'lumi_overrides_v1',
+        proxyPrefs: 'lumi_proxy_prefs_v1',
+        allowlist: 'lumi_allowlist_v1',
+        customBlock: 'lumi_custom_block_v1',
+    };
+    const HIST_MAX = 500;
+    const RECENT_MAX = 16;
+    const FAV = (host) => host ? `https://icons.duckduckgo.com/ip3/${encodeURIComponent(host)}.ico` : '';
+
+    const SEARCH_ENGINES = {
+        luminal:    { label: 'Luminal',    q: '/lumi/search?q=',                            internal: true },
+        duckduckgo: { label: 'DuckDuckGo', q: 'https://duckduckgo.com/?q=' },
+        google:     { label: 'Google',     q: 'https://www.google.com/search?q=' },
+        brave:      { label: 'Brave',      q: 'https://search.brave.com/search?q=' },
+        startpage:  { label: 'Startpage',  q: 'https://www.startpage.com/do/search?query=' },
+    };
+
+    function load(key, fallback) {
+        try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
+        catch { return fallback; }
+    }
+    function save(key, val) {
+        try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
+    }
+
+    let prefs = Object.assign({
+        searchEngine: 'luminal',
+        showBookmarksBar: true,
+        blockAds: true,
+        startup: 'newtab',
+        homeUrl: '',
+        searchOpensNewTab: false,
+        theme: 'auto',
+    }, load(STORAGE.prefs, {}));
+    if (!SEARCH_ENGINES[prefs.searchEngine]) prefs.searchEngine = 'luminal';
+    let bookmarks = load(STORAGE.bookmarks, []);
+    let history = load(STORAGE.history, []);
+    let pinned = load(STORAGE.pinned, []);
+    let recent = load(STORAGE.recent, []);
+    let overrides = load(STORAGE.overrides, []);
+    let proxyPrefs = load(STORAGE.proxyPrefs, {});
+    function getProxyPref(host) { return host && proxyPrefs[host] ? proxyPrefs[host] : null; }
+    function setProxyPref(host, backend) { if (!host || !backend) return; proxyPrefs[host] = backend; const ks = Object.keys(proxyPrefs); if (ks.length > 200) delete proxyPrefs[ks[0]]; save(STORAGE.proxyPrefs, proxyPrefs); }
+
+    function applyAdsCookie() {
+        const v = prefs.blockAds ? '1' : '0';
+        const exp = new Date(Date.now() + 365*24*60*60*1000).toUTCString();
+        document.cookie = `lumi_block_ads=${v}; Path=/; Expires=${exp}; SameSite=Lax`;
+        try { localStorage.setItem('luminal_block_ads', v); } catch {}
+    }
+    applyAdsCookie();
+
+    let allowlist = load(STORAGE.allowlist, []);
+    let customBlock = load(STORAGE.customBlock, []);
+    function capCookieList(arr, maxLen) {
+        const out = []; let len = 0;
+        for (const item of arr) {
+            const add = encodeURIComponent((out.length ? ',' : '') + item).length;
+            if (len + add > maxLen) break;
+            out.push(item); len += add;
+        }
+        return out;
+    }
+    function applyFilterCookies() {
+        const exp = new Date(Date.now() + 365*24*60*60*1000).toUTCString();
+        document.cookie = `lumi_allow=${encodeURIComponent(capCookieList(allowlist, 1800).join(','))}; Path=/; Expires=${exp}; SameSite=Lax`;
+        document.cookie = `lumi_custom_block=${encodeURIComponent(capCookieList(customBlock, 1800).join(','))}; Path=/; Expires=${exp}; SameSite=Lax`;
+    }
+    applyFilterCookies();
+    function isAllowlisted(host) { return !!host && allowlist.includes(host.toLowerCase()); }
+    function toggleAllowSite(host) {
+        host = (host || '').toLowerCase();
+        if (!host) return false;
+        const i = allowlist.indexOf(host);
+        if (i >= 0) allowlist.splice(i, 1); else allowlist.push(host);
+        allowlist = allowlist.slice(-64);
+        save(STORAGE.allowlist, allowlist);
+        applyFilterCookies();
+        return allowlist.includes(host);
+    }
+    function addCustomBlock(rule) {
+        rule = (rule || '').trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+        if (!rule || customBlock.includes(rule)) return false;
+        customBlock.push(rule);
+        customBlock = customBlock.slice(-64);
+        save(STORAGE.customBlock, customBlock);
+        applyFilterCookies();
+        return true;
+    }
+    function removeCustomBlock(rule) {
+        const i = customBlock.indexOf(rule);
+        if (i >= 0) { customBlock.splice(i, 1); save(STORAGE.customBlock, customBlock); applyFilterCookies(); }
+    }
+    function reloadActiveProxyTab() {
+        location.reload();
+    }
+
+    function getHost(url) {
+        try { return new URL(url).hostname.replace(/^www\./, ''); }
+        catch { return ''; }
+    }
+    function shortTitle(url) {
+        const h = getHost(url);
+        return h || (url || '').slice(0, 40);
+    }
+
+    const tabs = [];
+    let activeId = null;
+    let nextId = 1;
+
+    const tabstrip = document.getElementById('tabstrip');
+    const newTabBtn = document.getElementById('new-tab');
+    const viewport = document.getElementById('viewport');
+    const address = document.getElementById('address');
+    const secure = document.getElementById('secure');
+    const proxySel = (() => {
+        const root = document.getElementById('proxy');
+        const label = root.querySelector('.proxy-pill__label');
+        const pop = root.querySelector('.proxy-popover');
+        const opts = Array.from(pop.querySelectorAll('.proxy-popover__opt'));
+        const listeners = new Set();
+        const target = new EventTarget();
+        function setOpen(open) {
+            root.dataset.open = open ? '1' : '0';
+            pop.dataset.open = open ? '1' : '0';
+            root.setAttribute('aria-expanded', open ? 'true' : 'false');
+        }
+        function setValue(v, fire) {
+            if (!opts.some(o => o.dataset.value === v)) return;
+            const prev = root.dataset.value;
+            root.dataset.value = v;
+            const opt = opts.find(o => o.dataset.value === v);
+            if (label && opt) label.textContent = opt.querySelector('.proxy-popover__opt-name').firstChild.textContent;
+            opts.forEach(o => o.setAttribute('aria-selected', o.dataset.value === v ? 'true' : 'false'));
+            if (fire !== false && prev !== v) {
+                const ev = new Event('change');
+                target.dispatchEvent(ev);
+                listeners.forEach(fn => { try { fn(ev); } catch (e) { console.warn(e); } });
+            }
+        }
+        root.addEventListener('click', (e) => {
+            if (e.target.closest('.proxy-popover')) return;
+            setOpen(root.dataset.open !== '1');
+        });
+        root.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(root.dataset.open !== '1'); }
+            if (e.key === 'Escape') setOpen(false);
+        });
+        opts.forEach(o => o.addEventListener('click', (e) => {
+            e.stopPropagation();
+            setValue(o.dataset.value);
+            setOpen(false);
+        }));
+        document.addEventListener('mousedown', (e) => { if (!root.contains(e.target)) setOpen(false); }, true);
+        setValue(window.lumiProxy ? window.lumiProxy.getCurrent() : 'scramjet2', false);
+        return {
+            get value() { return root.dataset.value; },
+            set value(v) { setValue(v, false); },
+            addEventListener: (name, fn) => { if (name === 'change') listeners.add(fn); else target.addEventListener(name, fn); },
+            removeEventListener: (name, fn) => { if (name === 'change') listeners.delete(fn); else target.removeEventListener(name, fn); },
+            dispatchEvent: (ev) => target.dispatchEvent(ev),
+        };
+    })();
+    const progress = document.getElementById('progress');
+    const backBtn = document.getElementById('back');
+    const fwdBtn = document.getElementById('fwd');
+    const reloadBtn = document.getElementById('reload');
+    const homeBtn = document.getElementById('home');
+    const histBtn = document.getElementById('hist-btn');
+    const bmBtn = document.getElementById('bookmark-btn');
+    const menuBtn = document.getElementById('menu-btn');
+    const menuPop = document.getElementById('menu-pop');
+    const histPop = document.getElementById('hist-pop');
+    const histList = document.getElementById('hist-list');
+    const bmBar = document.getElementById('bm-bar');
+    const suggest = document.getElementById('suggest');
+
+    function pStart() { progress.style.opacity = '1'; progress.style.width = '14%'; setTimeout(() => { if (progress.style.opacity === '1') progress.style.width = '55%'; }, 150); setTimeout(() => { if (progress.style.opacity === '1') progress.style.width = '78%'; }, 600); }
+    function pEnd() { progress.style.width = '100%'; setTimeout(() => { progress.style.opacity = '0'; setTimeout(() => progress.style.width = '0%', 250); }, 120); }
+
+    function getActive() { return tabs.find(t => t.id === activeId); }
+
+    function makeTabEl(t) {
+        const el = document.createElement('div');
+        el.className = 'tab';
+        el.dataset.id = String(t.id);
+        el.draggable = true;
+        const fav = document.createElement('div');
+        fav.className = 'tab-fav placeholder';
+        fav.textContent = (t.title || '?').charAt(0).toUpperCase();
+        const title = document.createElement('div');
+        title.className = 'tab-title';
+        title.textContent = t.title || 'New Tab';
+        const x = document.createElement('button');
+        x.className = 'tab-x';
+        x.title = 'Close';
+        x.innerHTML = '<i class="fa-solid fa-times"></i>';
+        x.addEventListener('click', (e) => { e.stopPropagation(); closeTab(t.id); });
+        el.appendChild(fav);
+        el.appendChild(title);
+        el.appendChild(x);
+        el.addEventListener('click', (e) => { if (e.target.closest('.tab-x')) return; switchTo(t.id); });
+        attachTabDrag(el, t.id);
+        tabstrip.insertBefore(el, newTabBtn);
+        return { el, fav, title };
+    }
+
+    let dragTabId = null;
+    function attachTabDrag(el, id) {
+        el.addEventListener('dragstart', (e) => {
+            dragTabId = id;
+            el.classList.add('dragging');
+            try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(id)); } catch {}
+        });
+        el.addEventListener('dragend', () => {
+            el.classList.remove('dragging');
+            dragTabId = null;
+            tabstrip.querySelectorAll('.tab.drag-over-left, .tab.drag-over-right').forEach(n => n.classList.remove('drag-over-left', 'drag-over-right'));
+        });
+        el.addEventListener('dragover', (e) => {
+            if (dragTabId === null || dragTabId === id) return;
+            e.preventDefault();
+            try { e.dataTransfer.dropEffect = 'move'; } catch {}
+            const r = el.getBoundingClientRect();
+            const before = (e.clientX - r.left) < r.width / 2;
+            el.classList.toggle('drag-over-left', before);
+            el.classList.toggle('drag-over-right', !before);
+        });
+        el.addEventListener('dragleave', () => {
+            el.classList.remove('drag-over-left', 'drag-over-right');
+        });
+        el.addEventListener('drop', (e) => {
+            if (dragTabId === null || dragTabId === id) return;
+            e.preventDefault();
+            const r = el.getBoundingClientRect();
+            const before = (e.clientX - r.left) < r.width / 2;
+            reorderTabs(dragTabId, id, before);
+            el.classList.remove('drag-over-left', 'drag-over-right');
+        });
+    }
+
+    function reorderTabs(srcId, dstId, before) {
+        const srcIdx = tabs.findIndex(t => t.id === srcId);
+        if (srcIdx < 0) return;
+        const [moved] = tabs.splice(srcIdx, 1);
+        let dstIdx = tabs.findIndex(t => t.id === dstId);
+        if (dstIdx < 0) { tabs.splice(srcIdx, 0, moved); return; }
+        const insertAt = before ? dstIdx : dstIdx + 1;
+        tabs.splice(insertAt, 0, moved);
+        const refEl = tabs[insertAt + 1]?.parts?.el || newTabBtn;
+        tabstrip.insertBefore(moved.parts.el, refEl);
+    }
+
+    function setTabFavicon(t, host) {
+        const f = t.parts.fav;
+        if (!host) { f.className = 'tab-fav placeholder'; f.textContent = (t.title || '?').charAt(0).toUpperCase(); return; }
+        const img = document.createElement('img');
+        img.src = FAV(host);
+        img.className = 'tab-fav';
+        img.onerror = () => { f.replaceWith(buildLetter(t.title)); t.parts.fav = document.querySelector(`.tab[data-id="${t.id}"] .tab-fav`); };
+        img.onload = () => {};
+        f.replaceWith(img);
+        t.parts.fav = img;
+    }
+    function buildLetter(title) {
+        const f = document.createElement('div');
+        f.className = 'tab-fav placeholder';
+        f.textContent = (title || '?').charAt(0).toUpperCase();
+        return f;
+    }
+
+    function createTab(initialUrl, opts = {}) {
+        const id = nextId++;
+        const t = {
+            id,
+            url: '',
+            iframeUrl: '',
+            kind: 'web',
+            title: 'New Tab',
+            backend: window.lumiProxy ? window.lumiProxy.getCurrent() : 'scramjet2',
+            history: [],
+            histIdx: -1,
+            iframe: null,
+            page: null,
+            parts: null,
+            mode: 'newtab',
+            navWatcher: null,
+            lastIframeUrl: '',
+            lastActive: Date.now(),
+            suspended: false,
+        };
+        tabs.push(t);
+        t.parts = makeTabEl(t);
+        const page = document.createElement('div');
+        page.className = 'page';
+        page.dataset.id = String(id);
+        viewport.appendChild(page);
+        t.page = page;
+        renderNewtab(t);
+        switchTo(id);
+        if (initialUrl) navigateTab(id, initialUrl);
+        return id;
+    }
+
+    let splitMode = false;
+    let leftId = null, rightId = null, focusedPane = 'left';
+    let splitRatio = 0.5;
+    let splitDivider = null;
+    const splitBtn = document.getElementById('split-btn');
+
+    const LIVE_TAB_CAP = 4;
+
+    function suspendTab(t) {
+        if (!t || t.mode !== 'web' || !t.iframe) return;
+        if (t.id === activeId || t.id === leftId || t.id === rightId) return;
+        try { if (t.navWatcher) { clearInterval(t.navWatcher); t.navWatcher = null; } } catch (e) {}
+        try { t.iframe.src = 'about:blank'; } catch (e) {}
+        try { t.iframe.remove(); } catch (e) {}
+        t.iframe = null;
+        t.suspended = true;
+    }
+
+    function restoreTab(t) {
+        if (!t || !t.suspended) return;
+        t.suspended = false;
+        if (t.mode === 'web' && !t.iframe && t.url) {
+            navigateTab(t.id, t.url, { noHistoryPush: true, keepBackend: true });
+        }
+    }
+
+    function enforceTabLiveCap() {
+        const live = tabs.filter(t => t.iframe && t.mode === 'web');
+        if (live.length <= LIVE_TAB_CAP) return;
+        const keep = new Set([activeId, leftId, rightId].filter(v => v != null));
+        const candidates = live.filter(t => !keep.has(t.id)).sort((a, b) => (a.lastActive || 0) - (b.lastActive || 0));
+        let toSuspend = live.length - LIVE_TAB_CAP;
+        for (const t of candidates) {
+            if (toSuspend <= 0) break;
+            suspendTab(t);
+            toSuspend--;
+        }
+    }
+
+    function switchTo(id) {
+        if (splitMode) { switchToSplit(id); return; }
+        const prev = getActive();
+        if (prev) { prev.parts.el.classList.remove('active'); prev.page.classList.remove('active'); }
+        const t = tabs.find(x => x.id === id);
+        if (!t) return;
+        activeId = id;
+        t.lastActive = Date.now();
+        t.parts.el.classList.add('active');
+        t.page.classList.add('active');
+        proxySel.value = t.backend;
+        if (t.suspended) restoreTab(t);
+        syncAddressForTab(t);
+        updateNav();
+        updateBookmarkStar();
+        enforceTabLiveCap();
+    }
+
+    function syncToolbarToFocused() {
+        const t = tabs.find(x => x.id === activeId);
+        if (!t) return;
+        tabs.forEach(x => x.parts.el.classList.toggle('active', x.id === activeId));
+        syncAddressForTab(t);
+        proxySel.value = t.backend;
+        updateNav();
+        updateBookmarkStar();
+    }
+
+    function switchToSplit(id) {
+        const t = tabs.find(x => x.id === id);
+        if (!t) return;
+        if (id !== leftId && id !== rightId) {
+            if (focusedPane === 'left') leftId = id; else rightId = id;
+        } else {
+            focusedPane = (id === leftId) ? 'left' : 'right';
+        }
+        activeId = id;
+        t.lastActive = Date.now();
+        if (t.mode === 'newtab' && !t.page.firstChild) renderNewtab(t);
+        if (t.suspended) restoreTab(t);
+        const otherPane = tabs.find(x => (x.id === leftId || x.id === rightId) && x.id !== id);
+        if (otherPane) { otherPane.lastActive = Date.now(); if (otherPane.suspended) restoreTab(otherPane); }
+        applySplitLayout();
+        syncToolbarToFocused();
+        enforceTabLiveCap();
+    }
+
+    function applySplitLayout() {
+        tabs.forEach(t => t.page.classList.remove('page--split-left', 'page--split-right', 'pane-focused', 'active'));
+        const lt = tabs.find(t => t.id === leftId);
+        const rt = tabs.find(t => t.id === rightId);
+        if (!lt || !rt) { disableSplit(); return; }
+        lt.page.classList.add('page--split-left');
+        rt.page.classList.add('page--split-right');
+        (focusedPane === 'left' ? lt : rt).page.classList.add('pane-focused');
+        viewport.style.setProperty('--split', (splitRatio * 100) + '%');
+        if (splitDivider) splitDivider.style.left = (splitRatio * 100) + '%';
+    }
+
+    function ensureDivider() {
+        if (splitDivider) { splitDivider.style.display = 'block'; return; }
+        splitDivider = document.createElement('div');
+        splitDivider.className = 'split-divider';
+        viewport.appendChild(splitDivider);
+        let dragging = false;
+        const onMove = (e) => {
+            if (!dragging) return;
+            const r = viewport.getBoundingClientRect();
+            let ratio = (e.clientX - r.left) / r.width;
+            ratio = Math.max(0.2, Math.min(0.8, ratio));
+            splitRatio = ratio;
+            viewport.style.setProperty('--split', (ratio * 100) + '%');
+            splitDivider.style.left = (ratio * 100) + '%';
+        };
+        const onUp = () => {
+            dragging = false;
+            viewport.classList.remove('split-dragging');
+            splitDivider.classList.remove('dragging');
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onUp);
+        };
+        splitDivider.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            dragging = true;
+            viewport.classList.add('split-dragging');
+            splitDivider.classList.add('dragging');
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+        });
+    }
+
+    function toggleSplit() { splitMode ? disableSplit() : enableSplit(); }
+
+    function enableSplit() {
+        if (!tabs.length) return;
+        leftId = activeId || tabs[0].id;
+        const r = tabs.find(t => t.id !== leftId);
+        if (r) rightId = r.id;
+        else rightId = createTab();
+        splitMode = true;
+        focusedPane = 'left';
+        activeId = leftId;
+        viewport.classList.add('is-split');
+        splitBtn.classList.add('active');
+        ensureDivider();
+        applySplitLayout();
+        syncToolbarToFocused();
+    }
+
+    function disableSplit() {
+        splitMode = false;
+        const keep = activeId || leftId;
+        viewport.classList.remove('is-split', 'split-dragging');
+        splitBtn.classList.remove('active');
+        if (splitDivider) splitDivider.style.display = 'none';
+        tabs.forEach(t => { t.page.classList.remove('page--split-left', 'page--split-right', 'pane-focused', 'active'); t.parts.el.classList.remove('active'); });
+        leftId = rightId = null;
+        if (tabs.length) switchTo(keep || tabs[0].id);
+        else createTab();
+    }
+
+    window.addEventListener('blur', () => {
+        if (!splitMode) return;
+        setTimeout(() => {
+            const ae = document.activeElement;
+            if (!ae || ae.tagName !== 'IFRAME') return;
+            const lt = tabs.find(t => t.id === leftId), rt = tabs.find(t => t.id === rightId);
+            if (lt && ae === lt.iframe && focusedPane !== 'left') { focusedPane = 'left'; activeId = leftId; applySplitLayout(); syncToolbarToFocused(); }
+            else if (rt && ae === rt.iframe && focusedPane !== 'right') { focusedPane = 'right'; activeId = rightId; applySplitLayout(); syncToolbarToFocused(); }
+        }, 0);
+    });
+
+    function closeTab(id) {
+        const idx = tabs.findIndex(t => t.id === id);
+        if (idx < 0) return;
+        const t = tabs[idx];
+        if (t.navWatcher) clearInterval(t.navWatcher);
+        if (t.iframe) {
+            try { t.iframe.src = 'about:blank'; } catch (e) {}
+            try { t.iframe.removeAttribute('src'); t.iframe.removeAttribute('srcdoc'); } catch (e) {}
+            try { t.iframe.remove(); } catch (e) {}
+            t.iframe = null;
+        }
+        t.parts.el.remove();
+        t.page.remove();
+        tabs.splice(idx, 1);
+        if (splitMode && (id === leftId || id === rightId)) {
+            const replacement = tabs.find(x => x.id !== leftId && x.id !== rightId);
+            if (id === leftId) leftId = replacement ? replacement.id : null;
+            if (id === rightId) rightId = replacement ? replacement.id : null;
+            if (leftId == null || rightId == null) {
+                activeId = leftId || rightId || (tabs[0] && tabs[0].id) || null;
+                disableSplit();
+            } else {
+                focusedPane = 'left';
+                activeId = leftId;
+                applySplitLayout();
+                syncToolbarToFocused();
+            }
+            return;
+        }
+        if (activeId === id) {
+            if (tabs.length) switchTo(tabs[Math.max(0, idx - 1)].id);
+            else createTab();
+        }
+    }
+
+    function syncAddressForTab(t, opts) {
+        if (!opts || !opts.force) {
+            if (document.activeElement === address) return;
+        }
+        if (t.mode === 'newtab') { address.value = ''; address.placeholder = 'Search or type a URL'; secure.className = 'fa-solid fa-magnifying-glass address-secure warn'; }
+        else if (t.mode === 'settings') { address.value = 'luminal://settings'; secure.className = 'fa-solid fa-gear address-secure'; }
+        else if (t.kind === 'search') { address.value = t.url || ''; address.placeholder = 'Search luminal'; secure.className = 'fa-solid fa-magnifying-glass address-secure'; }
+        else { address.value = t.url || ''; secure.className = (t.url && t.url.startsWith('https://')) ? 'fa-solid fa-lock address-secure' : 'fa-solid fa-triangle-exclamation address-secure warn'; }
+    }
+    function lumiSearchQueryOf(href) {
+        try {
+            const u = new URL(href, location.origin);
+            if (u.pathname === '/lumi/search') return u.searchParams.get('q') || '';
+        } catch {}
+        return '';
+    }
+    function setLuminalFavicon(t) {
+        const f = t.parts.fav;
+        const el = document.createElement('div');
+        el.className = 'tab-fav placeholder';
+        el.style.background = 'linear-gradient(135deg,#a78bfa,#5b8def)';
+        el.style.color = '#fff';
+        el.textContent = 'L';
+        f.replaceWith(el);
+        t.parts.fav = el;
+    }
+
+    function updateNav() {
+        const t = getActive();
+        if (!t) { backBtn.disabled = fwdBtn.disabled = reloadBtn.disabled = true; return; }
+        backBtn.disabled = t.histIdx <= 0;
+        fwdBtn.disabled = t.histIdx >= t.history.length - 1;
+        reloadBtn.disabled = !t.url;
+    }
+
+    async function navigateTab(id, input, opts = {}) {
+        const t = tabs.find(x => x.id === id);
+        if (!t || !input || !input.trim()) return;
+        if (!window.lumiProxy) { alert('Proxy not loaded'); return; }
+        const trimmed = input.trim();
+        if (/^luminal:\/\/settings$/i.test(trimmed)) { openSettingsTab(t); return; }
+        let url, displayUrl, kind = 'web', titleText;
+        const proxyParam = t.backend === 'uv' ? 'uv' : 'jet';
+        if (/^\/lumi\/search\b/.test(trimmed)) {
+            url = trimmed;
+            kind = 'search';
+            const q = lumiSearchQueryOf(trimmed) || '';
+            displayUrl = q;
+            titleText = q ? `${q} — luminal` : 'luminal — search';
+        } else if (/^[a-z][a-z0-9+\-.]*:/i.test(trimmed)) {
+            url = trimmed; displayUrl = url; titleText = shortTitle(url);
+        } else if (/^([\w-]+\.)+[\w-]{2,}/i.test(trimmed)) {
+            url = 'https://' + trimmed; displayUrl = url; titleText = shortTitle(url);
+        } else {
+            const engine = SEARCH_ENGINES[prefs.searchEngine] || SEARCH_ENGINES.luminal;
+            if (engine.internal) {
+                url = '/lumi/search?q=' + encodeURIComponent(trimmed) + '&p=' + proxyParam;
+                kind = 'search';
+                displayUrl = trimmed;
+                titleText = `${trimmed} — luminal`;
+            } else {
+                url = engine.q + encodeURIComponent(trimmed);
+                displayUrl = url;
+                titleText = shortTitle(url);
+            }
+        }
+        if (kind === 'web' && !opts.keepBackend) {
+            const prefHost = getHost(displayUrl);
+            const pref = getProxyPref(prefHost);
+            if (pref && pref !== t.backend) {
+                t.backend = pref;
+                if (activeId === id) proxySel.value = pref;
+            }
+        }
+        t.url = displayUrl;
+        t.iframeUrl = url;
+        t.kind = kind;
+        t.title = titleText;
+        t.parts.title.textContent = t.title;
+        t.mode = 'web';
+        if (activeId === id) syncAddressForTab(t);
+
+        if (!opts.noHistoryPush) {
+            t.history = t.history.slice(0, t.histIdx + 1);
+            t.history.push(url);
+            t.histIdx = t.history.length - 1;
+        }
+
+        if (t.page.firstChild && t.page.firstChild.classList && t.page.firstChild.classList.contains('newtab')) {
+            t.page.innerHTML = '';
+            t.iframe = null;
+        }
+        if (t.page.querySelector('.settings')) {
+            t.page.innerHTML = '';
+            t.iframe = null;
+            t.settingsRoot = null;
+        }
+
+        if (!t.iframe) {
+            const spinner = document.createElement('div');
+            spinner.className = 'spinner';
+            spinner.innerHTML = '<div></div>';
+            t.page.appendChild(spinner);
+            const ifr = document.createElement('iframe');
+            ifr.setAttribute('allow', 'fullscreen');
+            ifr.setAttribute('name', 'lumi-tab-' + id);
+            ifr.style.colorScheme = calcEffectiveTheme();
+            ifr.style.opacity = '0';
+            ifr.style.transition = 'opacity .18s ease';
+            ifr.addEventListener('load', () => {
+                ifr.style.opacity = '1';
+                if (activeId === id) pEnd();
+                spinner.remove();
+                if (t.backend === 'uv') { patchPopups(t); attachNavWatcher(t); }
+            });
+            t.page.appendChild(ifr);
+            t.iframe = ifr;
+        } else {
+            const stage = document.createElement('div');
+            stage.className = 'spinner';
+            stage.innerHTML = '<div></div>';
+            t.page.appendChild(stage);
+            t.iframe.style.opacity = '0';
+            t.iframe.addEventListener('load', () => { t.iframe.style.opacity = '1'; stage.remove(); if (t.backend === 'uv') { patchPopups(t); attachNavWatcher(t); } }, { once: true });
+        }
+
+        if (activeId === id) pStart();
+        try {
+            if (kind === 'search') {
+                let surl = url;
+                const B = window.lumiBackends;
+                if (B && B.apiBase) { try { await B.ensureApi(); } catch (e) {} surl = B.apiBase() + url; }
+                t.iframe.src = surl;
+                setLuminalFavicon(t);
+            } else {
+                const navToken = url;
+                const RETRY_DELAYS = [700, 1600, 3200];
+                let lastErr = null, ok = false;
+                for (let attempt = 0; attempt <= RETRY_DELAYS.length; attempt++) {
+                    if (attempt > 0) {
+                        if (t.iframeUrl !== navToken) return;
+                        showRetryNote(t, attempt + 1, RETRY_DELAYS.length + 1);
+                        await new Promise(r => setTimeout(r, RETRY_DELAYS[attempt - 1]));
+                        if (t.iframeUrl !== navToken) return;
+                    }
+                    try {
+                        const _r = await window.lumiProxy.openInIframe(t.iframe, url, { backend: t.backend, onUrlChange: (newUrl) => applyTabUrl(t, newUrl, 'web') });
+                        if (_r && _r.frame) t.frame = _r.frame;
+                        ok = true;
+                        break;
+                    } catch (e) {
+                        lastErr = e;
+                        console.warn(`Proxy attempt ${attempt + 1} failed:`, (e && e.message) || e);
+                    }
+                }
+                if (!ok) throw lastErr || new Error('load failed');
+                if (t.iframeUrl !== navToken) return;
+                recordHistory({ url: displayUrl, title: t.title });
+                recordRecent(displayUrl);
+                setTabFavicon(t, getHost(displayUrl));
+            }
+            updateNav();
+            updateBookmarkStar();
+        } catch (err) {
+            console.error('Proxy navigate failed:', err);
+            if (activeId === id) pEnd();
+            t.page.innerHTML = `<div style="padding:32px;color:var(--ink);max-width:520px;line-height:1.55"><h3 style="margin:0 0 6px;font-weight:500">Couldn't load via ${(window.lumiProxy.LABELS[t.backend] || t.backend)}</h3><p style="margin:0 0 8px;opacity:0.7">${(err && err.message) || err}</p><p style="opacity:0.55;font-size:12px">Try the other backend from the picker.</p></div>`;
+            t.iframe = null;
+        }
+    }
+
+    function showRetryNote(t, n, total) {
+        try {
+            const spin = t.page.querySelector('.spinner');
+            if (!spin) return;
+            let note = spin.querySelector('.spinner-note');
+            if (!note) {
+                note = document.createElement('div');
+                note.className = 'spinner-note';
+                note.style.cssText = 'margin-top:14px;font-size:12px;opacity:0.6;font-family:monospace;';
+                spin.appendChild(note);
+            }
+            note.textContent = `retrying… (${n}/${total})`;
+        } catch {}
+    }
+
+    function patchPopups(t) {
+        try {
+            const win = t.iframe && t.iframe.contentWindow;
+            if (!win) return;
+            const backend = t.backend;
+            const decode = (raw) => {
+                if (!raw) return '';
+                try {
+                    const url = new URL(raw, location.href);
+                    if (backend === 'uv') {
+                        const m = url.pathname.match(/^\/lumi\/vu\/service\/(.+)$/);
+                        if (m && typeof __uv$config !== 'undefined') return __uv$config.decodeUrl(m[1]);
+                    }
+                    return raw;
+                } catch { return raw; }
+            };
+            if (win.__lumiOpenPatched) return;
+            win.__lumiOpenPatched = true;
+            const orig = win.open;
+            win.open = function (u, name, features) {
+                if (name && name !== '_blank' && name !== '_self' && name !== '_top' && name !== '_parent') {
+                    try { return orig.call(win, u, name, features); } catch { return null; }
+                }
+                try {
+                    const target = decode(u);
+                    if (target) { createTab(target); return null; }
+                } catch {}
+                return orig ? orig.call(win, u, name, features) : null;
+            };
+            try {
+                win.addEventListener('click', (ev) => {
+                    const a = ev.target && ev.target.closest && ev.target.closest('a[target="_blank"], a[target=_blank]');
+                    if (!a) return;
+                    const href = a.href;
+                    if (!href) return;
+                    const target = decode(href);
+                    if (target && target !== href) {
+                        ev.preventDefault();
+                        ev.stopPropagation();
+                        createTab(target);
+                    }
+                }, true);
+            } catch {}
+        } catch {}
+    }
+
+    function applyTabUrl(t, realUrl, kind) {
+        if (!realUrl) return;
+        kind = kind || 'web';
+        if (realUrl === t.url && kind === t.kind) return;
+        t.url = realUrl;
+        t.kind = kind;
+        if (kind === 'search') {
+            const q = realUrl || '';
+            t.title = q ? `${q} — luminal` : 'luminal — search';
+            t.parts.title.textContent = t.title;
+            setLuminalFavicon(t);
+        } else {
+            t.title = shortTitle(realUrl);
+            t.parts.title.textContent = t.title;
+            t.history = t.history.slice(0, t.histIdx + 1);
+            t.history.push(realUrl);
+            t.histIdx = t.history.length - 1;
+            recordHistory({ url: realUrl, title: t.title });
+            recordRecent(realUrl);
+            setTabFavicon(t, getHost(realUrl));
+        }
+        if (activeId === t.id) { syncAddressForTab(t); updateNav(); updateBookmarkStar(); }
+    }
+
+    function attachNavWatcher(t) {
+        if (t.navWatcher) clearInterval(t.navWatcher);
+        t.lastIframeUrl = '';
+        t.navWatcher = setInterval(() => {
+            if (!t.iframe) return;
+            let rawHref;
+            try { rawHref = t.iframe.contentWindow.location.href; } catch { return; }
+            const info = decodeIframeUrl(rawHref, t.backend);
+            if (!info || !info.url || rawHref === t.lastIframeUrl) return;
+            t.lastIframeUrl = rawHref;
+            applyTabUrl(t, info.url, info.kind);
+        }, 500);
+    }
+
+    function decodeIframeUrl(href, backend) {
+        if (!href) return null;
+        try {
+            const u = new URL(href);
+            if (backend === 'uv') {
+                const m = u.pathname.match(/^\/lumi\/vu\/service\/(.+)$/);
+                if (m && typeof __uv$config !== 'undefined') {
+                    try { return { url: __uv$config.decodeUrl(m[1]), kind: 'web' }; } catch { return null; }
+                }
+            }
+            if (u.pathname === '/lumi/search') {
+                return { url: u.searchParams.get('q') || '', kind: 'search' };
+            }
+        } catch {}
+        return null;
+    }
+    function decodeProxiedUrl(href, backend) {
+        const info = decodeIframeUrl(href, backend);
+        return info && info.kind === 'web' ? info.url : '';
+    }
+
+    function recordHistory(entry) {
+        const last = history[0];
+        if (last && last.url === entry.url) { last.t = Date.now(); save(STORAGE.history, history); return; }
+        history.unshift({ url: entry.url, title: entry.title || shortTitle(entry.url), t: Date.now() });
+        if (history.length > HIST_MAX) history.length = HIST_MAX;
+        save(STORAGE.history, history);
+    }
+    function recordRecent(url) {
+        const host = getHost(url);
+        if (!host) return;
+        recent = recent.filter(r => r.host !== host);
+        recent.unshift({ host, url, t: Date.now() });
+        if (recent.length > RECENT_MAX) recent.length = RECENT_MAX;
+        save(STORAGE.recent, recent);
+    }
+
+    backBtn.addEventListener('click', () => {
+        const t = getActive(); if (!t || t.histIdx <= 0) return;
+        t.histIdx--; navigateTab(t.id, t.history[t.histIdx], { noHistoryPush: true });
+    });
+    fwdBtn.addEventListener('click', () => {
+        const t = getActive(); if (!t || t.histIdx >= t.history.length - 1) return;
+        t.histIdx++; navigateTab(t.id, t.history[t.histIdx], { noHistoryPush: true });
+    });
+    reloadBtn.addEventListener('click', () => {
+        const t = getActive(); if (!t || !t.url) return;
+        navigateTab(t.id, t.url, { noHistoryPush: true });
+    });
+    homeBtn.addEventListener('click', () => { const t = getActive(); if (!t) return; t.mode = 'newtab'; t.url = ''; t.iframe = null; if (t.navWatcher) { clearInterval(t.navWatcher); t.navWatcher = null; } renderNewtab(t); syncAddressForTab(t); updateNav(); updateBookmarkStar(); });
+
+    address.addEventListener('keydown', (e) => {
+        const open = suggest.classList.contains('open') && sugRows.length;
+        if (e.key === 'ArrowDown' && open) {
+            e.preventDefault(); sugIndex = (sugIndex + 1) % sugRows.length; paintSuggestFocus();
+        } else if (e.key === 'ArrowUp' && open) {
+            e.preventDefault(); sugIndex = (sugIndex - 1 + sugRows.length) % sugRows.length; paintSuggestFocus();
+        } else if (e.key === 'Enter') {
+            if (sugIndex >= 0 && sugRows[sugIndex]) { e.preventDefault(); const act = sugRows[sugIndex].action; closeSuggest(); address.blur(); act(); }
+            else { closeSuggest(); const v = address.value; address.blur(); navigate(v); }
+        } else if (e.key === 'Escape') { closeSuggest(); const t = getActive(); if (t) syncAddressForTab(t, { force: true }); address.blur(); }
+    });
+    address.addEventListener('focus', () => { address.select(); openSuggest(); });
+    address.addEventListener('input', () => { openSuggest(); fetchSuggest(address.value.trim()); });
+    address.addEventListener('blur', () => setTimeout(closeSuggest, 150));
+
+    proxySel.addEventListener('change', () => {
+        const t = getActive(); if (!t) return;
+        t.backend = proxySel.value;
+        if (t.kind === 'web') {
+            const host = getHost(t.url);
+            if (host) setProxyPref(host, t.backend);
+        }
+        if (t.url) navigateTab(t.id, t.url, { noHistoryPush: true, keepBackend: true });
+    });
+
+    newTabBtn.addEventListener('click', () => createTab());
+
+    function navigate(input) { if (activeId) navigateTab(activeId, input); }
+
+    let sugIndex = -1;
+    let sugRows = [];
+    let netSug = [];
+    let netSugQ = '';
+    let sugDebounce = null;
+
+    function fetchSuggest(q) {
+        clearTimeout(sugDebounce);
+        if (!q) { netSug = []; netSugQ = ''; return; }
+        sugDebounce = setTimeout(async () => {
+            try {
+                const r = await fetch('/lumi/suggest?q=' + encodeURIComponent(q));
+                const arr = await r.json();
+                if (address.value.trim() === q && document.activeElement === address) {
+                    netSug = Array.isArray(arr) ? arr : [];
+                    netSugQ = q.toLowerCase();
+                    openSuggest();
+                }
+            } catch { netSug = []; }
+        }, 130);
+    }
+
+    function openSuggest() {
+        const raw = address.value.trim();
+        const q = raw.toLowerCase();
+        const rows = [];
+        if (raw) {
+            rows.push({ icon: 'fa-magnifying-glass', text: `Search "${raw}"`, sub: SEARCH_ENGINES[prefs.searchEngine].label, action: () => navigate(raw) });
+            if (/^([\w-]+\.)+[\w-]{2,}/.test(q)) rows.push({ icon: 'fa-globe', text: raw, sub: 'Open URL', action: () => navigate(raw) });
+        }
+        const matches = history.filter(h => h.url.toLowerCase().includes(q) || (h.title || '').toLowerCase().includes(q)).slice(0, 5);
+        for (const h of matches) rows.push({ icon: 'fa-clock-rotate-left', text: h.title || h.url, sub: getHost(h.url), action: () => navigate(h.url) });
+        const bms = bookmarks.filter(b => b.url.toLowerCase().includes(q) || (b.name || '').toLowerCase().includes(q)).slice(0, 3);
+        for (const b of bms) rows.push({ icon: 'fa-star', text: b.name || b.url, sub: getHost(b.url), action: () => navigate(b.url) });
+        if (raw && netSugQ === q && netSug.length) {
+            const seen = new Set(rows.map(r => r.text.toLowerCase()));
+            seen.add(q);
+            for (const s of netSug) {
+                const sl = String(s).toLowerCase();
+                if (seen.has(sl)) continue;
+                seen.add(sl);
+                rows.push({ icon: 'fa-magnifying-glass', text: String(s), sub: 'Search', action: () => navigate(String(s)) });
+                if (rows.length > 12) break;
+            }
+        }
+        if (!rows.length) { closeSuggest(); return; }
+        sugRows = rows;
+        sugIndex = -1;
+        suggest.innerHTML = '';
+        rows.forEach((r, i) => {
+            const el = document.createElement('div');
+            el.className = 'sug-row';
+            el.innerHTML = `<i class="sug-icon fa-solid ${r.icon}"></i><div class="sug-text">${r.text.replace(/</g,'&lt;')}</div><div class="sug-sub">${r.sub}</div>`;
+            el.addEventListener('mousedown', (e) => { e.preventDefault(); r.action(); closeSuggest(); });
+            el.addEventListener('mouseenter', () => { sugIndex = i; paintSuggestFocus(); });
+            suggest.appendChild(el);
+        });
+        suggest.classList.add('open');
+    }
+    function paintSuggestFocus() {
+        const kids = suggest.querySelectorAll('.sug-row');
+        kids.forEach((el, i) => el.classList.toggle('focus', i === sugIndex));
+        if (sugIndex >= 0 && kids[sugIndex]) kids[sugIndex].scrollIntoView({ block: 'nearest' });
+    }
+    function closeSuggest() { suggest.classList.remove('open'); sugIndex = -1; sugRows = []; }
+
+    function updateBookmarkStar() {
+        const t = getActive();
+        const bookmarked = t && t.url && bookmarks.some(b => b.url === t.url);
+        bmBtn.querySelector('i').className = bookmarked ? 'fa-solid fa-star' : 'fa-regular fa-star';
+        bmBtn.style.color = bookmarked ? '#fbbf24' : '';
+    }
+    bmBtn.addEventListener('click', () => {
+        const t = getActive(); if (!t || !t.url) return;
+        const idx = bookmarks.findIndex(b => b.url === t.url);
+        if (idx >= 0) bookmarks.splice(idx, 1);
+        else bookmarks.push({ url: t.url, name: t.title || shortTitle(t.url), t: Date.now() });
+        save(STORAGE.bookmarks, bookmarks);
+        renderBookmarksBar();
+        updateBookmarkStar();
+    });
+
+    histBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleHistoryPop(); });
+    if (splitBtn) splitBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleSplit(); });
+    menuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const t = getActive();
+        const host = t && t.kind === 'web' ? getHost(t.url) : '';
+        const allowRow = menuPop.querySelector('[data-act="allow-ads"]');
+        const allowLabel = document.getElementById('menu-allow-label');
+        if (allowRow) {
+            if (!host) { allowRow.style.display = 'none'; }
+            else { allowRow.style.display = ''; if (allowLabel) allowLabel.textContent = isAllowlisted(host) ? `Block ads on ${host}` : `Allow ads on ${host}`; }
+        }
+        menuPop.classList.toggle('open'); histPop.classList.remove('open');
+    });
+    document.addEventListener('click', (e) => {
+        if (!menuPop.contains(e.target) && e.target !== menuBtn && !menuBtn.contains(e.target)) menuPop.classList.remove('open');
+        if (!histPop.contains(e.target) && e.target !== histBtn && !histBtn.contains(e.target)) histPop.classList.remove('open');
+    });
+    menuPop.addEventListener('click', (e) => {
+        const row = e.target.closest('.menu-row'); if (!row) return;
+        const act = row.dataset.act;
+        menuPop.classList.remove('open');
+        if (act === 'newtab') createTab();
+        else if (act === 'newwin') { const t = getActive(); if (t && t.url && window.lumiProxy) window.lumiProxy.openInWindow(t.url, { backend: t.backend }); }
+        else if (act === 'bookmarks') openSettingsTab(getActive(), 'bookmarks');
+        else if (act === 'history') openSettingsTab(getActive(), 'history');
+        else if (act === 'downloads') alert('Downloads pass through your proxy backend\'s native handling.');
+        else if (act === 'toggle-bm') { prefs.showBookmarksBar = !prefs.showBookmarksBar; save(STORAGE.prefs, prefs); applyBookmarksBarVisibility(); }
+        else if (act === 'allow-ads') {
+            const t = getActive();
+            const host = t && t.kind === 'web' ? getHost(t.url) : '';
+            if (host) { toggleAllowSite(host); reloadActiveProxyTab(); }
+        }
+        else if (act === 'settings') openSettingsTab(getActive());
+    });
+
+    function toggleHistoryPop() {
+        if (histPop.classList.contains('open')) { histPop.classList.remove('open'); return; }
+        renderHistoryPop();
+        histPop.classList.add('open');
+        menuPop.classList.remove('open');
+    }
+    function renderHistoryPop() {
+        histList.innerHTML = '';
+        if (!history.length) { histList.innerHTML = '<div class="tile-empty">No history yet.</div>'; return; }
+        for (const h of history.slice(0, 30)) {
+            const row = document.createElement('div');
+            row.className = 'hist-row';
+            const host = getHost(h.url);
+            row.innerHTML = `<img src="${FAV(host)}" alt=""><div class="hr-text"><div class="hr-title">${(h.title || h.url).replace(/</g,'&lt;')}</div><div class="hr-url">${host}</div></div>`;
+            row.addEventListener('click', () => { histPop.classList.remove('open'); navigate(h.url); });
+            histList.appendChild(row);
+        }
+    }
+
+    function applyBookmarksBarVisibility() {
+        bmBar.classList.toggle('hidden', !prefs.showBookmarksBar || bookmarks.length === 0);
+        renderBookmarksBar();
+    }
+    function renderBookmarksBar() {
+        bmBar.innerHTML = '';
+        if (!bookmarks.length) { bmBar.innerHTML = '<span class="bm-empty">No bookmarks yet — star a page to add one</span>'; bmBar.classList.toggle('hidden', !prefs.showBookmarksBar ? true : false); return; }
+        for (const b of bookmarks.slice(0, 30)) {
+            const el = document.createElement('button');
+            el.className = 'bm';
+            const host = getHost(b.url);
+            el.innerHTML = `<img src="${FAV(host)}" alt=""><span class="bm-label">${(b.name || host).replace(/</g,'&lt;')}</span>`;
+            el.addEventListener('click', () => navigate(b.url));
+            el.addEventListener('contextmenu', (ev) => {
+                ev.preventDefault();
+                if (confirm(`Remove bookmark "${b.name || b.url}"?`)) {
+                    bookmarks = bookmarks.filter(x => x.url !== b.url);
+                    save(STORAGE.bookmarks, bookmarks);
+                    renderBookmarksBar();
+                    updateBookmarkStar();
+                }
+            });
+            bmBar.appendChild(el);
+        }
+        bmBar.classList.toggle('hidden', !prefs.showBookmarksBar);
+    }
+
+    function renderNewtab(t) {
+        t.iframe = null;
+        if (t.navWatcher) { clearInterval(t.navWatcher); t.navWatcher = null; }
+        t.page.innerHTML = '';
+        const root = document.createElement('div');
+        root.className = 'newtab scrollbar';
+        root.innerHTML = `
+            <div class="nt-clock">
+                <div class="nt-time" id="nt-time">--:--</div>
+                <div class="nt-sec" id="nt-sec">--</div>
+                <div class="nt-meta" id="nt-meta"></div>
+            </div>
+            <form class="nt-search" id="nt-form" autocomplete="off" style="position:relative;">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input id="nt-input" placeholder="Search ${SEARCH_ENGINES[prefs.searchEngine].label} or type a URL">
+                <div class="address-suggest scrollbar" id="nt-suggest"></div>
+            </form>
+            <div class="nt-section">
+                <h4>Pinned <span class="nt-act"><button id="nt-pin-add">+ Add</button></span></h4>
+                <div class="tile-grid" id="nt-pinned"></div>
+            </div>
+            <div class="nt-section">
+                <h4>Recent <span class="nt-act"><button id="nt-clear-recent">Clear</button></span></h4>
+                <div class="tile-grid" id="nt-recent"></div>
+            </div>
+        `;
+        t.page.appendChild(root);
+        const tEl = root.querySelector('#nt-time');
+        const sEl = root.querySelector('#nt-sec');
+        const mEl = root.querySelector('#nt-meta');
+        function tick() {
+            const d = new Date();
+            const hh = d.getHours();
+            const mm = String(d.getMinutes()).padStart(2, '0');
+            const ss = String(d.getSeconds()).padStart(2, '0');
+            const h12 = ((hh + 11) % 12) + 1;
+            const ampm = hh >= 12 ? 'PM' : 'AM';
+            tEl.textContent = `${h12}:${mm}`;
+            sEl.textContent = `${ss} ${ampm}`;
+            mEl.innerHTML = `<span>${d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</span><span class="dot"></span><span>${tabs.length} tab${tabs.length===1?'':'s'}</span><span class="dot"></span><span>${history.length} sites visited</span>`;
+        }
+        tick();
+        const tickInt = setInterval(tick, 1000);
+        const obs = new MutationObserver(() => { if (!root.isConnected) { clearInterval(tickInt); obs.disconnect(); } });
+        obs.observe(t.page, { childList: true });
+
+        const form = root.querySelector('#nt-form');
+        const input = root.querySelector('#nt-input');
+        form.addEventListener('submit', (e) => { e.preventDefault(); if (input.value.trim()) navigate(input.value); });
+        setTimeout(() => input.focus(), 30);
+
+        const ntSuggest = root.querySelector('#nt-suggest');
+        let ntRows = [], ntIndex = -1, ntDeb = null, ntNet = [], ntNetQ = '';
+        function ntPaintFocus() {
+            const kids = ntSuggest.querySelectorAll('.sug-row');
+            kids.forEach((el, i) => el.classList.toggle('focus', i === ntIndex));
+            if (ntIndex >= 0 && kids[ntIndex]) kids[ntIndex].scrollIntoView({ block: 'nearest' });
+        }
+        function ntRender() {
+            const raw = input.value.trim(); const q = raw.toLowerCase();
+            const rows = [];
+            if (raw) {
+                rows.push({ text: `Search "${raw}"`, sub: SEARCH_ENGINES[prefs.searchEngine].label, action: () => navigate(raw) });
+                if (/^([\w-]+\.)+[\w-]{2,}/.test(q)) rows.push({ text: raw, sub: 'Open URL', action: () => navigate(raw) });
+            }
+            if (raw && ntNetQ === q && ntNet.length) {
+                const seen = new Set(rows.map(r => r.text.toLowerCase())); seen.add(q);
+                for (const s of ntNet) { const sl = String(s).toLowerCase(); if (seen.has(sl)) continue; seen.add(sl); rows.push({ text: String(s), sub: 'Search', action: () => navigate(String(s)) }); if (rows.length > 10) break; }
+            }
+            if (!rows.length) { ntSuggest.classList.remove('open'); ntRows = []; return; }
+            ntRows = rows; ntIndex = -1;
+            ntSuggest.innerHTML = '';
+            rows.forEach((r, i) => {
+                const el = document.createElement('div'); el.className = 'sug-row';
+                el.innerHTML = `<i class="sug-icon fa-solid fa-magnifying-glass"></i><div class="sug-text">${r.text.replace(/</g,'&lt;')}</div><div class="sug-sub">${r.sub}</div>`;
+                el.addEventListener('mousedown', (e) => { e.preventDefault(); r.action(); });
+                el.addEventListener('mouseenter', () => { ntIndex = i; ntPaintFocus(); });
+                ntSuggest.appendChild(el);
+            });
+            ntSuggest.classList.add('open');
+        }
+        input.addEventListener('input', () => {
+            ntRender();
+            clearTimeout(ntDeb);
+            const q = input.value.trim();
+            if (!q) { ntNet = []; ntNetQ = ''; return; }
+            ntDeb = setTimeout(async () => {
+                try { const r = await fetch('/lumi/suggest?q=' + encodeURIComponent(q)); const arr = await r.json(); if (input.value.trim() === q) { ntNet = Array.isArray(arr) ? arr : []; ntNetQ = q.toLowerCase(); ntRender(); } } catch {}
+            }, 130);
+        });
+        input.addEventListener('keydown', (e) => {
+            const open = ntSuggest.classList.contains('open') && ntRows.length;
+            if (e.key === 'ArrowDown' && open) { e.preventDefault(); ntIndex = (ntIndex + 1) % ntRows.length; ntPaintFocus(); }
+            else if (e.key === 'ArrowUp' && open) { e.preventDefault(); ntIndex = (ntIndex - 1 + ntRows.length) % ntRows.length; ntPaintFocus(); }
+            else if (e.key === 'Enter' && ntIndex >= 0 && ntRows[ntIndex]) { e.preventDefault(); ntRows[ntIndex].action(); }
+        });
+        input.addEventListener('blur', () => setTimeout(() => ntSuggest.classList.remove('open'), 150));
+
+        const pinG = root.querySelector('#nt-pinned');
+        function paintPinned() {
+            pinG.innerHTML = '';
+            for (const p of pinned) {
+                const tile = document.createElement('div');
+                tile.className = 'tile';
+                const host = getHost(p.url);
+                tile.innerHTML = `<div class="tile-fav"><img src="${FAV(host)}" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'letter',textContent:(\`${(p.name||host||'?').replace(/[\\\`'\"]/g,'')}\`).charAt(0).toUpperCase()}))"></div><div class="tile-label">${(p.name || host).replace(/</g,'&lt;')}</div><button class="tile-x" title="Remove"><i class="fa-solid fa-times"></i></button>`;
+                tile.addEventListener('click', (e) => { if (e.target.closest('.tile-x')) return; navigate(p.url); });
+                tile.querySelector('.tile-x').addEventListener('click', (e) => { e.stopPropagation(); pinned = pinned.filter(x => x.url !== p.url); save(STORAGE.pinned, pinned); paintPinned(); });
+                pinG.appendChild(tile);
+            }
+            const add = document.createElement('button');
+            add.className = 'tile-add';
+            add.innerHTML = '<div class="tile-fav" style="background:transparent"><i class="fa-solid fa-plus" style="font-size:18px"></i></div><div class="tile-label">Add</div>';
+            add.addEventListener('click', () => promptAddPin());
+            pinG.appendChild(add);
+        }
+        paintPinned();
+        root.querySelector('#nt-pin-add').addEventListener('click', () => promptAddPin());
+        function promptAddPin() {
+            const url = prompt('URL of the site to pin:');
+            if (!url) return;
+            const norm = window.lumiProxy ? window.lumiProxy.normalizeUrl(url.trim()) : url.trim();
+            const name = prompt('Display name (optional):', getHost(norm) || norm) || getHost(norm) || norm;
+            pinned.push({ name, url: norm });
+            save(STORAGE.pinned, pinned);
+            paintPinned();
+        }
+
+        const recG = root.querySelector('#nt-recent');
+        function paintRecent() {
+            recG.innerHTML = '';
+            if (!recent.length) { recG.innerHTML = '<div class="tile-empty">Sites you visit will appear here.</div>'; return; }
+            for (const r of recent) {
+                const tile = document.createElement('div');
+                tile.className = 'tile';
+                tile.innerHTML = `<div class="tile-fav"><img src="${FAV(r.host)}" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'letter',textContent:'${(r.host||'?').charAt(0).toUpperCase()}'}))"></div><div class="tile-label">${r.host}</div>`;
+                tile.addEventListener('click', () => navigate(r.url));
+                recG.appendChild(tile);
+            }
+        }
+        paintRecent();
+        root.querySelector('#nt-clear-recent').addEventListener('click', () => { recent = []; save(STORAGE.recent, recent); paintRecent(); });
+
+        t.title = 'New Tab';
+        t.parts.title.textContent = t.title;
+        t.parts.fav.replaceWith(buildLetter('•'));
+        t.parts.fav = t.parts.el.querySelector('.tab-fav');
+    }
+
+    function openSettingsTab(t, section) {
+        if (!t) { t = tabs[tabs.find(x=>x.mode==='settings') ? 0 : (createTab() - 1)]; t = tabs.find(x => x.mode === 'settings') || getActive(); }
+        if (t.navWatcher) { clearInterval(t.navWatcher); t.navWatcher = null; }
+        t.iframe = null;
+        t.url = '';
+        t.mode = 'settings';
+        t.title = 'Settings';
+        t.parts.title.textContent = 'Settings';
+        t.parts.fav.replaceWith(buildSettingsFav());
+        t.parts.fav = t.parts.el.querySelector('.tab-fav');
+        t.page.innerHTML = '';
+        renderSettings(t, section || 'general');
+        if (activeId === t.id) { syncAddressForTab(t); updateNav(); updateBookmarkStar(); }
+    }
+    function buildSettingsFav() {
+        const f = document.createElement('div');
+        f.className = 'tab-fav placeholder';
+        f.innerHTML = '<i class="fa-solid fa-gear" style="font-size:9px"></i>';
+        return f;
+    }
+
+    const SETTINGS_SECTIONS = [
+        { id: 'general',     icon: 'fa-sliders',           label: 'General' },
+        { id: 'privacy',     icon: 'fa-shield-halved',     label: 'Privacy & Filters' },
+        { id: 'appearance',  icon: 'fa-palette',           label: 'Appearance' },
+        { id: 'bookmarks',   icon: 'fa-bookmark',          label: 'Bookmarks' },
+        { id: 'history',     icon: 'fa-clock-rotate-left', label: 'History' },
+        { id: 'advanced',    icon: 'fa-flask',             label: 'Advanced' },
+    ];
+
+    function renderSettings(t, section) {
+        const root = document.createElement('div');
+        root.className = 'settings scrollbar';
+        const nav = document.createElement('div');
+        nav.className = 'settings-nav';
+        nav.innerHTML = `<h3>Settings</h3>`;
+        SETTINGS_SECTIONS.forEach(s => {
+            const b = document.createElement('button');
+            if (s.id === section) b.classList.add('active');
+            b.innerHTML = `<i class="fa-solid ${s.icon}"></i>${s.label}`;
+            b.addEventListener('click', () => renderSettings(t, s.id));
+            nav.appendChild(b);
+        });
+        const body = document.createElement('div');
+        body.className = 'settings-body';
+        body.appendChild(buildSection(section));
+        root.appendChild(nav);
+        root.appendChild(body);
+        t.page.innerHTML = '';
+        t.page.appendChild(root);
+    }
+
+    function buildSection(id) {
+        const wrap = document.createElement('div');
+        if (id === 'general') wrap.appendChild(sectionGeneral());
+        else if (id === 'privacy') wrap.appendChild(sectionPrivacy());
+        else if (id === 'appearance') wrap.appendChild(sectionAppearance());
+        else if (id === 'bookmarks') wrap.appendChild(sectionBookmarks());
+        else if (id === 'history') wrap.appendChild(sectionHistory());
+        else if (id === 'advanced') wrap.appendChild(sectionAdvanced());
+        return wrap;
+    }
+
+    function h2(title, sub) {
+        const f = document.createDocumentFragment();
+        const h = document.createElement('h2'); h.textContent = title; f.appendChild(h);
+        if (sub) { const p = document.createElement('p'); p.className = 'subtitle'; p.textContent = sub; f.appendChild(p); }
+        return f;
+    }
+    function row(labelTitle, labelSub, control) {
+        const r = document.createElement('div'); r.className = 'set-row';
+        const lbl = document.createElement('div'); lbl.className = 'lbl';
+        const b = document.createElement('b'); b.textContent = labelTitle; lbl.appendChild(b);
+        if (labelSub) { const s = document.createElement('span'); s.textContent = labelSub; lbl.appendChild(s); }
+        r.appendChild(lbl); r.appendChild(control); return r;
+    }
+    function toggle(checked, onchange) {
+        const t = document.createElement('label'); t.className = 'toggle';
+        const i = document.createElement('input'); i.type = 'checkbox'; i.checked = !!checked; i.addEventListener('change', () => onchange(i.checked));
+        const s = document.createElement('span'); s.className = 'toggle-slider';
+        t.appendChild(i); t.appendChild(s); return t;
+    }
+
+    function sectionGeneral() {
+        const f = document.createDocumentFragment();
+        f.appendChild(h2('General', 'Defaults that apply to every new tab.'));
+        const sec = document.createElement('div'); sec.className = 'set-section';
+        const sel = document.createElement('select');
+        Object.entries(SEARCH_ENGINES).forEach(([k, v]) => { const o = document.createElement('option'); o.value = k; o.textContent = v.label + (v.internal ? ' (in-proxy)' : ''); if (prefs.searchEngine === k) o.selected = true; sel.appendChild(o); });
+        sel.addEventListener('change', () => { prefs.searchEngine = sel.value; save(STORAGE.prefs, prefs); });
+        sec.appendChild(row('Default search engine', 'Used by the address bar and the new-tab search box. Luminal renders DuckDuckGo results through our backend with custom styling.', sel));
+
+        sec.appendChild(row('Open search results in a new tab', 'When on, clicking a Luminal search result spawns a fresh tab instead of replacing the current one.', toggle(prefs.searchOpensNewTab, (v) => { prefs.searchOpensNewTab = v; save(STORAGE.prefs, prefs); })));
+
+        const proxyOpt = document.createElement('select');
+        const proxyLabels = { scramjet2: 'Scramjet v2', dynamic: 'Dynamic (use this if others seem blocked)', uv: 'Ultraviolet v3' };
+        ['scramjet2', 'dynamic', 'uv'].forEach(b => { const o = document.createElement('option'); o.value = b; o.textContent = proxyLabels[b]; if ((window.lumiProxy && window.lumiProxy.getCurrent()) === b) o.selected = true; proxyOpt.appendChild(o); });
+        proxyOpt.addEventListener('change', () => { if (window.lumiProxy) window.lumiProxy.setCurrent(proxyOpt.value); });
+        sec.appendChild(row('Default proxy backend', 'New tabs start with this backend. Per-tab override available in toolbar.', proxyOpt));
+        f.appendChild(sec);
+        return f;
+    }
+
+    function sectionPrivacy() {
+        const f = document.createDocumentFragment();
+        f.appendChild(h2('Privacy & Filters', 'Adult-site blocking is always on. Toggle ad-domain blocking below.'));
+        const sec = document.createElement('div'); sec.className = 'set-section';
+        sec.appendChild(row('Adult-site blocking', `Always enforced server-side.`, (() => { const t = toggle(true, () => {}); t.querySelector('input').disabled = true; t.style.opacity = 0.6; return t; })()));
+        sec.appendChild(row('Ad-domain blocking', 'Blocks 17K+ tracker/ad domains at the proxy.', toggle(prefs.blockAds, (v) => { prefs.blockAds = v; save(STORAGE.prefs, prefs); applyAdsCookie(); reloadActiveProxyTab(); })));
+        f.appendChild(sec);
+
+        const filt = document.createElement('div'); filt.className = 'set-section';
+        const fh = document.createElement('h3'); fh.textContent = 'Custom block rules'; filt.appendChild(fh);
+        const fhint = document.createElement('div'); fhint.className = 'ov-empty'; fhint.style.marginBottom = '8px';
+        fhint.textContent = 'Block extra domains on every backend (supports * wildcards, e.g. *.ads.example.com). Takes effect on the next page load.';
+        filt.appendChild(fhint);
+        const addRow = document.createElement('div'); addRow.style.display = 'flex'; addRow.style.gap = '8px'; addRow.style.marginBottom = '10px';
+        const inp = document.createElement('input'); inp.type = 'text'; inp.placeholder = 'domain or *.pattern to block';
+        inp.style.cssText = 'flex:1;background:var(--bg-input);border:1px solid var(--border);border-radius:8px;color:var(--ink);padding:8px 10px;font:inherit;font-size:13px;outline:none;';
+        const addBtn = document.createElement('button'); addBtn.className = 'set-btn'; addBtn.textContent = 'Block';
+        const doAdd = () => { if (addCustomBlock(inp.value)) { inp.value = ''; reloadActiveProxyTab(); renderSettings(getActive(), 'privacy'); } };
+        addBtn.addEventListener('click', doAdd);
+        inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); doAdd(); } });
+        addRow.appendChild(inp); addRow.appendChild(addBtn); filt.appendChild(addRow);
+        if (!customBlock.length) { const e = document.createElement('div'); e.className = 'ov-empty'; e.textContent = 'No custom block rules.'; filt.appendChild(e); }
+        else customBlock.forEach(rule => {
+            const r = document.createElement('div'); r.className = 'set-row';
+            const lbl = document.createElement('div'); lbl.className = 'lbl'; lbl.innerHTML = `<b>${rule.replace(/</g, '&lt;')}</b>`;
+            const del = document.createElement('button'); del.className = 'set-btn danger'; del.textContent = 'Remove';
+            del.addEventListener('click', () => { removeCustomBlock(rule); reloadActiveProxyTab(); renderSettings(getActive(), 'privacy'); });
+            r.appendChild(lbl); r.appendChild(del); filt.appendChild(r);
+        });
+        f.appendChild(filt);
+
+        const allowSec = document.createElement('div'); allowSec.className = 'set-section';
+        const ah = document.createElement('h3'); ah.textContent = 'Ad-blocking allowlist'; allowSec.appendChild(ah);
+        const ahint = document.createElement('div'); ahint.className = 'ov-empty'; ahint.style.marginBottom = '8px';
+        ahint.textContent = 'Sites where ad blocking is turned off (adult-site blocking stays on). Toggle per-site from the browser menu.';
+        allowSec.appendChild(ahint);
+        if (!allowlist.length) { const e = document.createElement('div'); e.className = 'ov-empty'; e.textContent = 'No allowlisted sites.'; allowSec.appendChild(e); }
+        else allowlist.forEach(host => {
+            const r = document.createElement('div'); r.className = 'set-row';
+            const lbl = document.createElement('div'); lbl.className = 'lbl'; lbl.innerHTML = `<b>${host.replace(/</g, '&lt;')}</b>`;
+            const del = document.createElement('button'); del.className = 'set-btn danger'; del.textContent = 'Remove';
+            del.addEventListener('click', () => { toggleAllowSite(host); reloadActiveProxyTab(); renderSettings(getActive(), 'privacy'); });
+            r.appendChild(lbl); r.appendChild(del); allowSec.appendChild(r);
+        });
+        f.appendChild(allowSec);
+
+        const danger = document.createElement('div'); danger.className = 'set-section';
+        const dh = document.createElement('h3'); dh.textContent = 'Clear data'; danger.appendChild(dh);
+        const btnRow = document.createElement('div'); btnRow.style.display = 'flex'; btnRow.style.gap = '8px'; btnRow.style.flexWrap = 'wrap';
+        const btnHist = document.createElement('button'); btnHist.className = 'set-btn danger'; btnHist.textContent = 'Clear all history';
+        btnHist.addEventListener('click', () => { if (confirm('Delete all browsing history?')) { history = []; save(STORAGE.history, history); alert('History cleared.'); } });
+        const btnRec = document.createElement('button'); btnRec.className = 'set-btn'; btnRec.textContent = 'Clear recent tiles';
+        btnRec.addEventListener('click', () => { recent = []; save(STORAGE.recent, recent); alert('Recent tiles cleared.'); });
+        btnRow.appendChild(btnHist); btnRow.appendChild(btnRec);
+        danger.appendChild(btnRow);
+        f.appendChild(danger);
+        return f;
+    }
+
+    function sectionAppearance() {
+        const f = document.createDocumentFragment();
+        f.appendChild(h2('Appearance', 'Tweak the chrome.'));
+        const sec = document.createElement('div'); sec.className = 'set-section';
+        const themeSel = document.createElement('select');
+        [['auto', 'Follow system'], ['light', 'Light'], ['dark', 'Dark']].forEach(([v, l]) => {
+            const o = document.createElement('option'); o.value = v; o.textContent = l;
+            if ((prefs.theme || 'auto') === v) o.selected = true; themeSel.appendChild(o);
+        });
+        themeSel.addEventListener('change', () => { prefs.theme = themeSel.value; save(STORAGE.prefs, prefs); applyCalcTheme(); });
+        sec.appendChild(row('Theme', 'Follow system matches your luminalOS light/dark setting. Light or Dark forces this browser regardless.', themeSel));
+        sec.appendChild(row('Show bookmarks bar', 'Toggle the strip under the address bar.', toggle(prefs.showBookmarksBar, (v) => { prefs.showBookmarksBar = v; save(STORAGE.prefs, prefs); applyBookmarksBarVisibility(); })));
+        f.appendChild(sec);
+        return f;
+    }
+
+    function sectionBookmarks() {
+        const f = document.createDocumentFragment();
+        f.appendChild(h2('Bookmarks', `${bookmarks.length} saved.`));
+        const sec = document.createElement('div'); sec.className = 'set-section';
+        if (!bookmarks.length) { const e = document.createElement('div'); e.className = 'ov-empty'; e.textContent = 'No bookmarks yet. Click the star in the toolbar to bookmark a page.'; sec.appendChild(e); }
+        else {
+            bookmarks.forEach((b, i) => {
+                const r = document.createElement('div'); r.className = 'set-row';
+                const lbl = document.createElement('div'); lbl.className = 'lbl';
+                const host = getHost(b.url);
+                lbl.innerHTML = `<b>${(b.name || host).replace(/</g,'&lt;')}</b><span>${b.url.replace(/</g,'&lt;')}</span>`;
+                const grp = document.createElement('div'); grp.style.display = 'flex'; grp.style.gap = '6px';
+                const open = document.createElement('button'); open.className = 'set-btn'; open.textContent = 'Open';
+                open.addEventListener('click', () => navigate(b.url));
+                const del = document.createElement('button'); del.className = 'set-btn danger'; del.textContent = 'Delete';
+                del.addEventListener('click', () => { bookmarks.splice(i, 1); save(STORAGE.bookmarks, bookmarks); renderBookmarksBar(); renderSettings(getActive(), 'bookmarks'); });
+                grp.appendChild(open); grp.appendChild(del);
+                r.appendChild(lbl); r.appendChild(grp);
+                sec.appendChild(r);
+            });
+        }
+        f.appendChild(sec);
+        return f;
+    }
+
+    function sectionHistory() {
+        const f = document.createDocumentFragment();
+        f.appendChild(h2('History', `${history.length} entries.`));
+        const sec = document.createElement('div'); sec.className = 'set-section';
+        if (!history.length) { const e = document.createElement('div'); e.className = 'ov-empty'; e.textContent = 'No history yet.'; sec.appendChild(e); }
+        else {
+            history.slice(0, 100).forEach((h, i) => {
+                const r = document.createElement('div'); r.className = 'set-row';
+                const lbl = document.createElement('div'); lbl.className = 'lbl';
+                lbl.innerHTML = `<b>${(h.title || h.url).replace(/</g,'&lt;')}</b><span>${h.url.replace(/</g,'&lt;')} · ${new Date(h.t).toLocaleString()}</span>`;
+                const grp = document.createElement('div'); grp.style.display = 'flex'; grp.style.gap = '6px';
+                const open = document.createElement('button'); open.className = 'set-btn'; open.textContent = 'Open';
+                open.addEventListener('click', () => navigate(h.url));
+                const del = document.createElement('button'); del.className = 'set-btn danger'; del.textContent = 'Forget';
+                del.addEventListener('click', () => { history.splice(i, 1); save(STORAGE.history, history); renderSettings(getActive(), 'history'); });
+                grp.appendChild(open); grp.appendChild(del);
+                r.appendChild(lbl); r.appendChild(grp);
+                sec.appendChild(r);
+            });
+        }
+        f.appendChild(sec);
+        return f;
+    }
+
+    function sectionAdvanced() {
+        const f = document.createDocumentFragment();
+        f.appendChild(h2('Advanced', 'Power-user controls. Asset overrides intercept proxied requests inside the SW.'));
+
+        const ovSec = document.createElement('div'); ovSec.className = 'set-section';
+        const oh = document.createElement('h3'); oh.textContent = 'Asset overrides'; ovSec.appendChild(oh);
+        const desc = document.createElement('p'); desc.className = 'subtitle'; desc.style.marginBottom = '14px'; desc.textContent = 'When a page proxied through Luminal requests a URL matching the pattern, serve a replacement instead. Patterns support * wildcards (e.g. *.example.com/script.js).'; ovSec.appendChild(desc);
+        const list = document.createElement('div'); list.className = 'override-list';
+        function paint() {
+            list.innerHTML = '';
+            if (!overrides.length) { const e = document.createElement('div'); e.className = 'ov-empty'; e.textContent = 'No overrides yet.'; list.appendChild(e); return; }
+            overrides.forEach((o, i) => {
+                const r = document.createElement('div'); r.className = 'ov-row' + (o.enabled === false ? ' disabled' : '');
+                const pat = document.createElement('input'); pat.value = o.pattern || ''; pat.placeholder = '*.example.com/path'; pat.addEventListener('change', () => { o.pattern = pat.value; save(STORAGE.overrides, overrides); pushOverridesToSW(); });
+                const arrow = document.createElement('div'); arrow.className = 'arrow'; arrow.innerHTML = '<i class="fa-solid fa-arrow-right"></i>';
+                const tgt = document.createElement('input'); tgt.value = o.target || ''; tgt.placeholder = o.kind === 'file' ? '(uploaded file)' : 'https://replacement-url'; tgt.disabled = o.kind === 'file'; tgt.addEventListener('change', () => { o.target = tgt.value; save(STORAGE.overrides, overrides); pushOverridesToSW(); });
+                const k = document.createElement('select');
+                ['url', 'file', 'block'].forEach(opt => { const op = document.createElement('option'); op.value = opt; op.textContent = opt === 'url' ? 'URL' : opt === 'file' ? 'File' : 'Block'; if (o.kind === opt) op.selected = true; k.appendChild(op); });
+                k.addEventListener('change', () => { o.kind = k.value; if (o.kind === 'file' && !o.target) { pickFile(o, () => { paint(); }); } save(STORAGE.overrides, overrides); pushOverridesToSW(); paint(); });
+                const x = document.createElement('button'); x.className = 'ov-x'; x.innerHTML = '<i class="fa-solid fa-times"></i>'; x.addEventListener('click', () => { overrides.splice(i, 1); save(STORAGE.overrides, overrides); pushOverridesToSW(); paint(); });
+                r.appendChild(pat); r.appendChild(arrow); r.appendChild(tgt); r.appendChild(k); r.appendChild(x);
+                list.appendChild(r);
+            });
+        }
+        paint();
+        const adds = document.createElement('div'); adds.className = 'ov-add';
+        const addUrl = document.createElement('button'); addUrl.className = 'set-btn'; addUrl.textContent = '+ Add URL override';
+        addUrl.addEventListener('click', () => { overrides.push({ pattern: '', target: '', kind: 'url', enabled: true }); save(STORAGE.overrides, overrides); paint(); });
+        const addFile = document.createElement('button'); addFile.className = 'set-btn'; addFile.textContent = '+ Add file override';
+        addFile.addEventListener('click', () => {
+            const o = { pattern: '', target: '', kind: 'file', enabled: true, fileName: '' };
+            pickFile(o, () => { overrides.push(o); save(STORAGE.overrides, overrides); paint(); pushOverridesToSW(); });
+        });
+        const addBlock = document.createElement('button'); addBlock.className = 'set-btn'; addBlock.textContent = '+ Add block rule';
+        addBlock.addEventListener('click', () => { overrides.push({ pattern: '', target: '', kind: 'block', enabled: true }); save(STORAGE.overrides, overrides); paint(); pushOverridesToSW(); });
+        adds.appendChild(addUrl); adds.appendChild(addFile); adds.appendChild(addBlock);
+        ovSec.appendChild(list);
+        ovSec.appendChild(adds);
+        f.appendChild(ovSec);
+
+        const expSec = document.createElement('div'); expSec.className = 'set-section';
+        const eh = document.createElement('h3'); eh.textContent = 'Import / Export'; expSec.appendChild(eh);
+        const ed = document.createElement('p'); ed.className = 'subtitle'; ed.style.marginBottom = '14px'; ed.textContent = 'Save bookmarks, history, pinned tiles, and overrides as a single JSON file.'; expSec.appendChild(ed);
+        const ebr = document.createElement('div'); ebr.style.display = 'flex'; ebr.style.gap = '8px';
+        const exp = document.createElement('button'); exp.className = 'set-btn primary'; exp.textContent = 'Export…';
+        exp.addEventListener('click', () => {
+            const blob = new Blob([JSON.stringify({ bookmarks, history, pinned, overrides, prefs }, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `luminal-browser-${new Date().toISOString().slice(0,10)}.json`; a.click();
+            URL.revokeObjectURL(a.href);
+        });
+        const imp = document.createElement('button'); imp.className = 'set-btn'; imp.textContent = 'Import…';
+        const impFile = document.createElement('input'); impFile.type = 'file'; impFile.accept = 'application/json'; impFile.style.display = 'none';
+        impFile.addEventListener('change', (e) => {
+            const file = e.target.files[0]; if (!file) return;
+            const r = new FileReader();
+            r.onload = () => {
+                try {
+                    const d = JSON.parse(r.result);
+                    if (d.bookmarks) { bookmarks = d.bookmarks; save(STORAGE.bookmarks, bookmarks); }
+                    if (d.history) { history = d.history; save(STORAGE.history, history); }
+                    if (d.pinned) { pinned = d.pinned; save(STORAGE.pinned, pinned); }
+                    if (d.overrides) { overrides = d.overrides; save(STORAGE.overrides, overrides); pushOverridesToSW(); }
+                    if (d.prefs) { prefs = Object.assign(prefs, d.prefs); save(STORAGE.prefs, prefs); applyAdsCookie(); applyBookmarksBarVisibility(); }
+                    renderSettings(getActive(), 'advanced');
+                } catch (err) { alert('Import failed: ' + err.message); }
+            };
+            r.readAsText(file);
+        });
+        imp.addEventListener('click', () => impFile.click());
+        ebr.appendChild(exp); ebr.appendChild(imp); ebr.appendChild(impFile);
+        expSec.appendChild(ebr);
+        f.appendChild(expSec);
+        return f;
+    }
+
+    function pickFile(o, cb) {
+        const fi = document.createElement('input'); fi.type = 'file';
+        fi.addEventListener('change', () => {
+            const file = fi.files[0]; if (!file) return cb && cb();
+            const r = new FileReader();
+            r.onload = () => { o.target = r.result; o.fileName = file.name; o.mime = file.type || 'application/octet-stream'; save(STORAGE.overrides, overrides); cb && cb(); };
+            r.readAsDataURL(file);
+        });
+        fi.click();
+    }
+
+    function pushOverridesToSW() {
+        if (!('serviceWorker' in navigator)) return;
+        navigator.serviceWorker.getRegistrations().then(regs => {
+            const payload = { type: 'lumi-overrides', overrides: overrides.filter(o => o.enabled !== false && o.pattern) };
+            regs.forEach(reg => {
+                const sw = reg.active || reg.waiting; if (sw) try { sw.postMessage(payload); } catch {}
+            });
+        });
+    }
+
+    window.addEventListener('message', (e) => {
+        const d = e.data; if (!d || typeof d !== 'object') return;
+        if (d.type === 'lumi-open-tab' && d.url) { createTab(d.url); }
+        if (d.type === 'lumi-navigate' && d.url) {
+            const openNew = !!d.newTab || (d.fromSearch && prefs.searchOpensNewTab);
+            if (openNew) createTab(d.url);
+            else { const a = getActive(); if (a) navigateTab(a.id, d.url); else createTab(d.url); }
+        }
+        if (d.type === 'lumi-overrides-ready') pushOverridesToSW();
+    });
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.addEventListener('message', (e) => {
+            const d = e.data; if (!d) return;
+            if (d.type === 'lumi-open-tab' && d.url) createTab(d.url);
+            if (d.type === 'lumi-overrides-ready') pushOverridesToSW();
+        });
+    }
+    setTimeout(pushOverridesToSW, 1500);
+    setInterval(pushOverridesToSW, 30000);
+
+    document.addEventListener('keydown', (e) => {
+        const cmd = e.ctrlKey || e.metaKey;
+        if (!cmd) {
+            if (e.altKey && e.key === 'ArrowLeft') { e.preventDefault(); backBtn.click(); }
+            else if (e.altKey && e.key === 'ArrowRight') { e.preventDefault(); fwdBtn.click(); }
+            return;
+        }
+        if (e.key === 't') { e.preventDefault(); createTab(); }
+        else if (e.key === 'w') { e.preventDefault(); if (activeId) closeTab(activeId); }
+        else if (e.key === 'l') { e.preventDefault(); address.focus(); }
+        else if (e.key === 'r') { e.preventDefault(); reloadBtn.click(); }
+        else if (e.key === 'd') { e.preventDefault(); bmBtn.click(); }
+        else if (e.key === ',') { e.preventDefault(); openSettingsTab(getActive()); }
+    });
+
+    function osTheme() {
+        try { return localStorage.getItem('luminal_theme') || 'dark'; } catch { return 'dark'; }
+    }
+    function calcEffectiveTheme() {
+        const mode = prefs.theme || 'auto';
+        return mode === 'auto' ? (osTheme() === 'light' ? 'light' : 'dark') : mode;
+    }
+    function applyCalcTheme() {
+        const eff = calcEffectiveTheme();
+        document.documentElement.classList.toggle('theme-light', eff === 'light');
+        document.documentElement.classList.toggle('theme-dark', eff === 'dark');
+        document.documentElement.style.colorScheme = eff;
+        document.querySelectorAll('.page iframe').forEach(f => { f.style.colorScheme = eff; });
+    }
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'luminal_theme' && (prefs.theme || 'auto') === 'auto') applyCalcTheme();
+    });
+
+    applyCalcTheme();
+    applyBookmarksBarVisibility();
+    renderBookmarksBar();
+    createTab();
+})();
+</script>
+</body>
+</html>

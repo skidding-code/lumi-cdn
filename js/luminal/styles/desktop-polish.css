@@ -1,0 +1,346 @@
+body.lumi-device-desktop {
+    --lumi-glass-blur: 38px;
+    --lumi-glass-saturation: 200%;
+}
+
+body.lumi-device-desktop, body.lumi-device-desktop * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
+body.lumi-device-desktop {
+    font-feature-settings: "ss01", "cv11";
+}
+
+body.lumi-device-desktop #lumi-menubar {
+    background: rgba(20, 20, 22, 0.6);
+    backdrop-filter: blur(28px) saturate(200%);
+    -webkit-backdrop-filter: blur(28px) saturate(200%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.04);
+}
+
+body.lumi-device-desktop.theme-light #lumi-menubar {
+    background: rgba(255, 255, 255, 0.7);
+}
+
+body.lumi-device-desktop .lumi-menubar__brand:hover {
+    text-shadow: 0 0 12px rgba(120, 180, 255, 0.6);
+}
+
+body.lumi-device-desktop #lumi-dock {
+    background: rgba(255, 255, 255, 0.16);
+    backdrop-filter: blur(36px) saturate(180%);
+    -webkit-backdrop-filter: blur(36px) saturate(180%);
+    box-shadow:
+        0 32px 90px -16px rgba(0, 0, 0, 0.6),
+        0 14px 32px rgba(0, 0, 0, 0.36),
+        inset 0 1px 0 rgba(255, 255, 255, 0.42),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.16);
+    transition: transform 0.4s var(--lumi-snap), opacity 0.3s var(--lumi-ease), padding 0.3s var(--lumi-snap);
+    contain: paint;
+}
+
+body.lumi-device-desktop .lumi-dock__app:hover,
+body.lumi-device-desktop .lumi-dock__sys:hover {
+    transform: translateY(-14px) scale(1.22);
+}
+
+body.lumi-device-desktop .lumi-dock__app:hover + .lumi-dock__app,
+body.lumi-device-desktop .lumi-dock__app:hover + .lumi-dock__sys,
+body.lumi-device-desktop .lumi-dock__sys:hover + .lumi-dock__app,
+body.lumi-device-desktop .lumi-dock__sys:hover + .lumi-dock__sys {
+    transform: translateY(-7px) scale(1.1);
+}
+
+body.lumi-device-desktop .lumi-dock__app:has(+ :hover),
+body.lumi-device-desktop .lumi-dock__sys:has(+ :hover) {
+    transform: translateY(-7px) scale(1.1);
+}
+
+body.lumi-device-desktop .lumi-dock__app--running::after {
+    width: 5px;
+    height: 5px;
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.85), 0 0 2px rgba(255,255,255,0.6);
+    animation: lumiRunningDot 2.4s ease-in-out infinite;
+}
+@keyframes lumiRunningDot {
+    0%, 100% { opacity: 1; transform: translateX(-50%) scale(1); }
+    50%      { opacity: 0.6; transform: translateX(-50%) scale(0.85); }
+}
+
+body.lumi-device-desktop .window {
+    border-radius: 12px !important;
+    box-shadow:
+        0 36px 90px -18px rgba(0, 0, 0, 0.62),
+        0 14px 30px rgba(0, 0, 0, 0.34),
+        0 0 0 1px rgba(255,255,255,0.06) !important;
+    transition: box-shadow 0.25s var(--lumi-ease), transform 0.25s var(--lumi-pop, var(--lumi-spring));
+}
+body.lumi-device-desktop .window.focused {
+    box-shadow:
+        0 44px 100px -22px rgba(0, 0, 0, 0.7),
+        0 18px 36px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(120, 180, 255, 0.18) !important;
+}
+body.lumi-device-desktop .window:not(.focused) {
+    filter: saturate(0.95) brightness(0.94);
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: rgba(28, 28, 30, 0.92) !important;
+}
+body.lumi-device-desktop.theme-light .window:not(.focused) {
+    background: rgba(245, 245, 247, 0.95) !important;
+}
+
+body.lumi-device-desktop .window-header {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border-radius: 12px 12px 0 0 !important;
+}
+
+body.lumi-device-desktop .window-control.close { background: #ff5f57; }
+body.lumi-device-desktop .window-control.minimize { background: #febc2e; }
+body.lumi-device-desktop .window-control.maximize { background: #28c840; }
+
+body.lumi-device-desktop .window-control {
+    transition: filter 0.15s ease, transform 0.12s var(--lumi-bounce, var(--lumi-spring));
+    box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.22), 0 1px 2px rgba(0,0,0,0.12) !important;
+}
+body.lumi-device-desktop .window-control:hover { filter: brightness(1.05); transform: scale(1.05); }
+body.lumi-device-desktop .window-control:active { transform: scale(0.92); }
+
+body.lumi-device-desktop #lumi-launchpad {
+    backdrop-filter: blur(60px) saturate(200%);
+    -webkit-backdrop-filter: blur(60px) saturate(200%);
+    background: rgba(15, 15, 18, 0.62);
+}
+
+body.lumi-device-desktop .lumi-launch-tile {
+    transition: transform 0.22s var(--lumi-bounce, var(--lumi-spring)), background 0.18s ease;
+}
+body.lumi-device-desktop .lumi-launch-tile:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-4px) scale(1.04);
+}
+body.lumi-device-desktop .lumi-launch-tile:hover .lumi-icon {
+    box-shadow: 0 18px 36px rgba(0,0,0,0.45), 0 6px 12px rgba(0,0,0,0.25);
+}
+
+body.lumi-device-desktop #lumi-spotlight-overlay {
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+}
+
+body.lumi-device-desktop #lumi-spotlight-panel {
+    box-shadow:
+        0 50px 110px -16px rgba(0,0,0,0.7),
+        0 18px 38px rgba(0,0,0,0.4);
+}
+
+body.lumi-device-desktop .icon {
+    transition: transform 0.18s var(--lumi-bounce, var(--lumi-spring)), background 0.15s ease, box-shadow 0.18s ease;
+}
+body.lumi-device-desktop .icon:hover {
+    transform: scale(1.06) translateY(-1px);
+    background-color: rgba(255, 255, 255, 0.12) !important;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12);
+}
+body.lumi-device-desktop .icon span {
+    font-weight: 500;
+    letter-spacing: 0.012em;
+}
+
+body.lumi-device-desktop input,
+body.lumi-device-desktop button,
+body.lumi-device-desktop textarea {
+    font-feature-settings: "ss01";
+}
+
+body.lumi-device-desktop .os-button {
+    transition:
+        transform 0.18s var(--lumi-bounce, var(--lumi-spring)),
+        box-shadow 0.22s var(--lumi-ease),
+        filter 0.18s ease,
+        background 0.2s ease !important;
+}
+body.lumi-device-desktop .os-button:hover {
+    transform: translateY(-2px) scale(1.02) !important;
+    box-shadow: 0 6px 14px color-mix(in srgb, var(--accent-color, #0a84ff) 36%, transparent), 0 2px 6px rgba(0,0,0,0.18) !important;
+}
+
+body.lumi-device-desktop .luminal-alert-box {
+    box-shadow: 0 50px 100px -22px rgba(0,0,0,0.72), 0 18px 36px rgba(0,0,0,0.38) !important;
+    animation: lumiDialogIn 0.34s var(--lumi-pop, var(--lumi-spring)) both;
+}
+@keyframes lumiDialogIn {
+    from { opacity: 0; transform: translate(-50%, -52%) scale(0.94); }
+    to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+body.lumi-device-desktop ::selection {
+    background: color-mix(in srgb, var(--accent-color, #0a84ff) 35%, transparent);
+    color: white;
+}
+
+body.lumi-device-desktop ::-webkit-scrollbar { width: 10px; height: 10px; }
+body.lumi-device-desktop ::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.12);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+body.lumi-device-desktop ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.22); border: 2px solid transparent; background-clip: padding-box; }
+body.lumi-device-desktop.theme-light ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.18); border: 2px solid transparent; background-clip: padding-box; }
+body.lumi-device-desktop ::-webkit-scrollbar-track { background: transparent; }
+
+body.lumi-device-desktop .lumi-dock__tooltip {
+    background: rgba(28, 28, 30, 0.95);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+body.lumi-device-desktop #admin-announcement {
+    animation: lumiToastIn 0.42s var(--lumi-pop, var(--lumi-spring)) both;
+}
+@keyframes lumiToastIn {
+    from { opacity: 0; transform: translateY(-10px) scale(0.96); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+body.lumi-device-desktop .lumi-icon {
+    transition: transform 0.2s var(--lumi-bounce, var(--lumi-spring)), box-shadow 0.22s var(--lumi-ease);
+}
+
+#lumi-desktop-widgets {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 80;
+}
+
+.lumi-dw {
+    position: absolute;
+    pointer-events: auto;
+    background: rgba(22, 22, 26, 0.55);
+    backdrop-filter: blur(30px) saturate(140%);
+    -webkit-backdrop-filter: blur(30px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 18px;
+    padding: 12px 14px;
+    color: rgba(255, 255, 255, 0.94);
+    min-width: 180px;
+    max-width: 480px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.32);
+    transition: transform 0.18s var(--lumi-spring), box-shadow 0.18s var(--lumi-ease);
+    contain: paint;
+}
+
+body.theme-light .lumi-dw {
+    background: rgba(255, 255, 255, 0.7);
+    border-color: rgba(0, 0, 0, 0.06);
+    color: rgba(20, 20, 24, 0.92);
+}
+
+body.lumi-edit-mode .lumi-dw {
+    cursor: move;
+    box-shadow: 0 0 0 1px rgba(120, 180, 255, 0.55), 0 14px 30px rgba(0, 0, 0, 0.4);
+}
+body.lumi-edit-mode .lumi-dw:hover { transform: scale(1.02); }
+.lumi-dw--dragging {
+    transition: none !important;
+    transform: scale(1.04);
+    z-index: 9999;
+}
+
+.lumi-dw__title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    opacity: 0.5;
+    margin-bottom: 10px;
+}
+
+.lumi-dw__body {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.lumi-dw__tile {
+    background: transparent;
+    border: 0;
+    padding: 0;
+    color: inherit;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    transition: transform 0.15s var(--lumi-bounce);
+}
+.lumi-dw__tile:hover { transform: translateY(-2px); }
+.lumi-dw__tile span {
+    font-size: 11px;
+    font-weight: 500;
+    max-width: 64px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    opacity: 0.78;
+}
+
+.lumi-dw__empty {
+    font-size: 12px;
+    opacity: 0.45;
+    padding: 6px 2px;
+}
+
+.lumi-dw__time {
+    font-size: 36px;
+    font-weight: 300;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+.lumi-dw__date {
+    margin-top: 6px;
+    font-size: 12px;
+    opacity: 0.55;
+    font-weight: 500;
+}
+
+#lumi-edit-bar {
+    position: fixed;
+    left: 50%;
+    top: calc(34px + var(--lumi-safe-top));
+    transform: translateX(-50%);
+    z-index: 13000;
+    background: rgba(22, 22, 26, 0.78);
+    backdrop-filter: blur(30px) saturate(180%);
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    padding: 6px 8px 6px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    color: white;
+    font-size: 13px;
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.32);
+}
+.lumi-edit-bar__done {
+    background: var(--accent-color, #0a84ff);
+    color: white;
+    border: 0;
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+}
+.lumi-edit-bar__done:hover { filter: brightness(1.08); }
+body.lumi-edit-mode .icon { cursor: grab; box-shadow: inset 0 0 0 1px rgba(120, 180, 255, 0.45); }

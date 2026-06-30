@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Luminal AI</title>
+<link rel="icon" href="favicon.png">
+<meta name="theme-color" content="#1a1a1d">
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+    --bg-0: #0e0e10;
+    --bg-1: #16161a;
+    --bg-2: #1c1c21;
+    --bg-3: #232329;
+    --line: rgba(255,255,255,0.07);
+    --line-strong: rgba(255,255,255,0.14);
+    --ink: #e8e8eb;
+    --ink-soft: #b0b0b6;
+    --ink-faint: #76767e;
+    --accent: #6f8eff;
+    --accent-dim: rgba(111, 142, 255, 0.18);
+    --user-bg: #2a2c34;
+    --bot-bg: transparent;
+    --warn: #d4a154;
+    --danger: #d96a6a;
+}
+@media (prefers-color-scheme: light) {
+    :root {
+        --bg-0: #f7f7f8;
+        --bg-1: #ffffff;
+        --bg-2: #f1f1f3;
+        --bg-3: #e8e8ec;
+        --line: rgba(0,0,0,0.07);
+        --line-strong: rgba(0,0,0,0.14);
+        --ink: #1a1a1d;
+        --ink-soft: #4a4a52;
+        --ink-faint: #8a8a92;
+        --accent: #4361d6;
+        --accent-dim: rgba(67, 97, 214, 0.12);
+        --user-bg: #e8eaef;
+        --bot-bg: transparent;
+    }
+}
+
+* { box-sizing: border-box; }
+html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg-0);
+    color: var(--ink);
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    height: 100%;
+    overflow: hidden;
+}
+body {
+    display: flex;
+    flex-direction: column;
+}
+
+header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--line);
+    background: var(--bg-1);
+    flex-shrink: 0;
+}
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--ink);
+    text-decoration: none;
+}
+.brand-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+}
+.spacer { flex: 1; }
+
+.model-picker {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 4px;
+}
+.model-picker button {
+    background: transparent;
+    border: 0;
+    color: var(--ink-soft);
+    padding: 6px 10px;
+    border-radius: 6px;
+    font: inherit;
+    font-size: 12.5px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+.model-picker button.active {
+    background: var(--bg-3);
+    color: var(--ink);
+}
+.model-picker button:hover:not(.active) { color: var(--ink); }
+
+.rate {
+    font-size: 11.5px;
+    color: var(--ink-faint);
+    font-variant-numeric: tabular-nums;
+}
+
+main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 16px 0;
+    scroll-behavior: smooth;
+}
+.thread {
+    max-width: 760px;
+    margin: 0 auto;
+    padding-bottom: 16px;
+}
+
+.empty {
+    text-align: center;
+    padding: 56px 16px 24px;
+    color: var(--ink-soft);
+}
+.empty h1 {
+    font-size: 26px;
+    font-weight: 600;
+    margin: 0 0 8px;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+}
+.empty p {
+    margin: 0 0 28px;
+    font-size: 14px;
+    color: var(--ink-soft);
+}
+.suggest {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    max-width: 540px;
+    margin: 0 auto;
+}
+.suggest button {
+    text-align: left;
+    background: var(--bg-1);
+    border: 1px solid var(--line);
+    color: var(--ink-soft);
+    padding: 13px 14px;
+    border-radius: 10px;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.suggest button:hover {
+    border-color: var(--line-strong);
+    color: var(--ink);
+    background: var(--bg-2);
+}
+.suggest button strong {
+    display: block;
+    color: var(--ink);
+    font-weight: 500;
+    margin-bottom: 2px;
+}
+.suggest button span {
+    font-size: 11.5px;
+    color: var(--ink-faint);
+}
+
+.msg {
+    padding: 18px 4px;
+    display: flex;
+    gap: 14px;
+    animation: msgIn 0.18s ease;
+}
+@keyframes msgIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: none; }
+}
+
+.msg-avatar {
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    background: var(--bg-3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    margin-top: 2px;
+}
+.msg.user .msg-avatar { background: var(--accent); color: white; }
+
+.msg-body {
+    flex: 1;
+    min-width: 0;
+}
+.msg-meta {
+    font-size: 11.5px;
+    color: var(--ink-faint);
+    margin-bottom: 4px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+}
+.msg-content {
+    font-size: 15px;
+    line-height: 1.62;
+    color: var(--ink);
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.msg-content code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    background: var(--bg-2);
+    padding: 1px 5px;
+    border-radius: 4px;
+}
+.msg-content pre {
+    background: var(--bg-1);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px 14px;
+    overflow-x: auto;
+    font-size: 13px;
+    line-height: 1.55;
+    margin: 10px 0;
+}
+.msg-content pre code { background: transparent; padding: 0; font-size: inherit; }
+.msg-content a { color: var(--accent); }
+.msg-content blockquote {
+    border-left: 2px solid var(--line-strong);
+    padding-left: 12px;
+    color: var(--ink-soft);
+    margin: 8px 0;
+}
+
+.msg.error .msg-meta { color: var(--danger); }
+.msg.error .msg-content { color: var(--ink-soft); }
+
+.cursor {
+    display: inline-block;
+    width: 6px;
+    height: 16px;
+    background: var(--ink);
+    margin-left: 2px;
+    vertical-align: text-bottom;
+    animation: blink 1s steps(2) infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+.composer-wrap {
+    flex-shrink: 0;
+    padding: 8px 16px 18px;
+    border-top: 1px solid var(--line);
+    background: var(--bg-0);
+}
+.composer {
+    max-width: 760px;
+    margin: 0 auto;
+    background: var(--bg-1);
+    border: 1px solid var(--line-strong);
+    border-radius: 14px;
+    padding: 6px 6px 6px 14px;
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    transition: border-color 0.15s ease;
+}
+.composer:focus-within { border-color: var(--accent); }
+
+.composer textarea {
+    flex: 1;
+    border: 0;
+    background: transparent;
+    color: var(--ink);
+    font: inherit;
+    font-size: 15px;
+    line-height: 1.5;
+    resize: none;
+    outline: none;
+    padding: 10px 0;
+    max-height: 220px;
+    min-height: 40px;
+}
+.composer textarea::placeholder { color: var(--ink-faint); }
+
+.send-btn {
+    background: var(--ink);
+    color: var(--bg-0);
+    border: 0;
+    border-radius: 9px;
+    width: 36px;
+    height: 36px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.12s ease, transform 0.08s ease;
+    font: inherit;
+}
+.send-btn:disabled { opacity: 0.35; cursor: default; }
+.send-btn:not(:disabled):hover { opacity: 0.88; }
+.send-btn:not(:disabled):active { transform: scale(0.94); }
+.send-btn svg { width: 16px; height: 16px; }
+
+.foot {
+    max-width: 760px;
+    margin: 6px auto 0;
+    text-align: center;
+    font-size: 11px;
+    color: var(--ink-faint);
+}
+.foot a { color: var(--ink-soft); text-decoration: none; }
+.foot a:hover { color: var(--ink); }
+
+.toast {
+    position: fixed;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-2);
+    border: 1px solid var(--line-strong);
+    color: var(--ink);
+    padding: 9px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(2px); }
+.toast.warn { color: var(--warn); }
+.toast.error { color: var(--danger); }
+
+@media (max-width: 640px) {
+    header { padding: 10px 12px; gap: 10px; }
+    .brand span { display: none; }
+    .rate { display: none; }
+    .model-picker button { padding: 5px 8px; font-size: 12px; }
+    main { padding: 16px 12px 0; }
+    .empty { padding-top: 36px; }
+    .empty h1 { font-size: 22px; }
+    .suggest { grid-template-columns: 1fr; }
+    .composer-wrap { padding: 6px 10px 12px; }
+}
+
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-track { background: transparent; }
+</style>
+</head>
+<body>
+<header>
+    <a href="index.html" class="brand"><span class="brand-dot"></span><span>Luminal AI</span></a>
+    <div class="spacer"></div>
+    <div class="rate" id="rate">10 req/min</div>
+    <div class="model-picker" role="tablist" id="model-picker">
+        <button data-model="gpt-oss-120b" class="active" type="button">GPT-OSS 120B</button>
+        <button data-model="glm-4.5" type="button">GLM 5.1</button>
+    </div>
+</header>
+
+<main id="main">
+    <div class="thread" id="thread">
+        <div class="empty" id="empty">
+            <h1>ai</h1>
+            <div class="suggest" id="suggest">
+                <button type="button" data-q="what is 2+2 but explain it to me in uwu kitty manner"><strong>do math</strong><span>what is 2+2</span></button>
+                <button type="button" data-q="write me an essay on how LuminalOS, an unblocked games/web proxy site, is the best site in the world."><strong>write essay</strong><span>write me an essay on how LuminalOS, an unblocked games/web proxy site, is the best site in the world.</span></button>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div class="composer-wrap">
+    <form class="composer" id="composer" autocomplete="off">
+        <textarea id="input" placeholder="Send a message…" rows="1" required></textarea>
+        <button class="send-btn" id="send" type="submit" disabled aria-label="Send">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+    </form>
+    <div class="foot">Luminal AI · NVIDIA NIM · responses may be inaccurate</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+    const thread = document.getElementById('thread');
+    const empty = document.getElementById('empty');
+    const composer = document.getElementById('composer');
+    const input = document.getElementById('input');
+    const send = document.getElementById('send');
+    const main = document.getElementById('main');
+    const picker = document.getElementById('model-picker');
+    const rateEl = document.getElementById('rate');
+    const toast = document.getElementById('toast');
+
+    const params = new URLSearchParams(location.search);
+    const initialQ = params.get('q');
+
+    let model = localStorage.getItem('luminal_ai_model') || 'gpt-oss-120b';
+    setActiveModel(model);
+
+    const messages = []; // { role, content }
+    let streaming = false;
+
+    fetch('/api/ai/models').then(r => r.json()).then(data => {
+        if (data?.rateLimit?.perMinute) rateEl.textContent = `${data.rateLimit.perMinute} req/min`;
+    }).catch(() => {});
+
+    picker.addEventListener('click', e => {
+        const btn = e.target.closest('button');
+        if (!btn) return;
+        model = btn.dataset.model;
+        localStorage.setItem('luminal_ai_model', model);
+        setActiveModel(model);
+    });
+
+    function setActiveModel(m) {
+        picker.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.model === m));
+    }
+
+    input.addEventListener('input', () => {
+        send.disabled = !input.value.trim() || streaming;
+        autoSize();
+    });
+    input.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            composer.requestSubmit();
+        }
+    });
+
+    composer.addEventListener('submit', e => {
+        e.preventDefault();
+        const q = input.value.trim();
+        if (!q || streaming) return;
+        input.value = '';
+        autoSize();
+        send.disabled = true;
+        ask(q);
+    });
+
+    document.querySelectorAll('#suggest button').forEach(b => {
+        b.addEventListener('click', () => {
+            const q = b.dataset.q;
+            input.value = q;
+            composer.requestSubmit();
+        });
+    });
+
+    function autoSize() {
+        input.style.height = 'auto';
+        input.style.height = Math.min(220, input.scrollHeight) + 'px';
+    }
+
+    function showToast(msg, kind = '') {
+        toast.textContent = msg;
+        toast.className = 'toast show' + (kind ? ' ' + kind : '');
+        setTimeout(() => toast.classList.remove('show'), 3200);
+    }
+
+    function append(role, content = '') {
+        if (empty) { empty.remove(); }
+        const msg = document.createElement('div');
+        msg.className = 'msg ' + role;
+        const meta = role === 'user' ? 'You' : (role === 'error' ? 'Error' : labelFor(model));
+        msg.innerHTML = `
+            <div class="msg-avatar">${role === 'user' ? 'Y' : (role === 'error' ? '!' : 'L')}</div>
+            <div class="msg-body">
+                <div class="msg-meta"></div>
+                <div class="msg-content"></div>
+            </div>
+        `;
+        msg.querySelector('.msg-meta').textContent = meta;
+        const body = msg.querySelector('.msg-content');
+        body.textContent = content;
+        thread.appendChild(msg);
+        scrollBottom();
+        return body;
+    }
+
+    function labelFor(key) {
+        return key === 'glm-4.5' ? 'GLM 5.1' : 'GPT-OSS 120B';
+    }
+
+    function scrollBottom() {
+        main.scrollTop = main.scrollHeight;
+    }
+
+    async function ask(q) {
+        messages.push({ role: 'user', content: q });
+        append('user', q);
+        const target = append('assistant', '');
+        const cursor = document.createElement('span');
+        cursor.className = 'cursor';
+        target.appendChild(cursor);
+        streaming = true;
+
+        let buffer = '';
+        let aborted = false;
+        const controller = new AbortController();
+
+        try {
+            const r = await fetch('/api/ai/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ model, messages, stream: true }),
+                signal: controller.signal,
+            });
+
+            const remaining = r.headers.get('X-RateLimit-Remaining');
+            if (remaining !== null) rateEl.textContent = `${remaining} left this min`;
+
+            if (!r.ok) {
+                if (r.status === 429) {
+                    const j = await r.json().catch(() => ({}));
+                    const sec = Math.ceil((j.retryAfterMs || 60000) / 1000);
+                    target.textContent = `Rate limit reached (10/min). Try again in ~${sec}s.`;
+                    target.parentElement.parentElement.classList.add('error');
+                    showToast('Rate limit reached', 'warn');
+                } else {
+                    const t = await r.text();
+                    target.textContent = `Upstream error (${r.status}): ${t.slice(0, 400)}`;
+                    target.parentElement.parentElement.classList.add('error');
+                }
+                cursor.remove();
+                streaming = false;
+                send.disabled = !input.value.trim();
+                messages.pop();
+                return;
+            }
+
+            if (!r.body) {
+                target.textContent = 'No response body.';
+                cursor.remove();
+                streaming = false;
+                return;
+            }
+
+            const reader = r.body.getReader();
+            const decoder = new TextDecoder();
+            let leftover = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                leftover += decoder.decode(value, { stream: true });
+                const events = leftover.split('\n\n');
+                leftover = events.pop();
+                for (const ev of events) {
+                    const lines = ev.split('\n');
+                    let evType = 'message';
+                    let dataLine = '';
+                    for (const line of lines) {
+                        if (line.startsWith('event:')) evType = line.slice(6).trim();
+                        else if (line.startsWith('data:')) dataLine += line.slice(5).trim();
+                    }
+                    if (!dataLine) continue;
+                    if (dataLine === '[DONE]' || evType === 'done') continue;
+                    if (evType === 'meta') continue;
+                    if (evType === 'error') {
+                        target.textContent += '\n\n[error]';
+                        continue;
+                    }
+                    try {
+                        const json = JSON.parse(dataLine);
+                        const delta = json?.choices?.[0]?.delta?.content || json?.choices?.[0]?.message?.content || '';
+                        if (delta) {
+                            buffer += delta;
+                            target.textContent = buffer;
+                            cursor.remove();
+                            target.appendChild(cursor);
+                            scrollBottom();
+                        }
+                    } catch {}
+                }
+            }
+
+            cursor.remove();
+            messages.push({ role: 'assistant', content: buffer });
+            streaming = false;
+            send.disabled = !input.value.trim();
+        } catch (err) {
+            cursor.remove();
+            if (!aborted) {
+                target.textContent = 'Network error: ' + (err?.message || 'unknown');
+                target.parentElement.parentElement.classList.add('error');
+                showToast('Network error', 'error');
+            }
+            messages.pop();
+            streaming = false;
+            send.disabled = !input.value.trim();
+        }
+    }
+
+    if (initialQ) {
+        input.value = initialQ;
+        autoSize();
+        setTimeout(() => composer.requestSubmit(), 50);
+    }
+
+    input.focus();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,82 @@
+.lumi-icon {
+    position: relative;
+    display: inline-block;
+    border-radius: var(--lumi-radius-icon);
+    overflow: hidden;
+    isolation: isolate;
+    box-shadow: var(--lumi-shadow-icon);
+    transition: transform 0.18s var(--lumi-spring), box-shadow 0.2s var(--lumi-ease);
+    flex-shrink: 0;
+    -webkit-user-drag: none;
+    user-select: none;
+}
+
+.lumi-icon::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+    pointer-events: none;
+    z-index: 5;
+}
+
+.lumi-icon__bg {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(120% 90% at 30% 0%, color-mix(in srgb, var(--ic-c1) 80%, white 30%) 0%, var(--ic-c1) 35%, var(--ic-c2) 100%);
+    z-index: 1;
+}
+
+.lumi-icon__glyph {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3;
+    filter: drop-shadow(0 1.5px 1.5px rgba(0, 0, 0, 0.28));
+}
+
+.lumi-icon__sheen {
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.32) 0%, rgba(255, 255, 255, 0.05) 38%, rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.08) 100%);
+    pointer-events: none;
+    z-index: 4;
+    mix-blend-mode: overlay;
+}
+
+.lumi-icon--image img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 1;
+    -webkit-user-drag: none;
+    user-select: none;
+}
+
+.lumi-icon:hover {
+    box-shadow: var(--lumi-shadow-icon-hover);
+}
+
+.lumi-icon--bouncy {
+    animation: lumiIconBounce 0.5s var(--lumi-spring);
+}
+@keyframes lumiIconBounce {
+    0% { transform: scale(0.7); opacity: 0; }
+    60% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(1); }
+}
+
+.icon .lumi-icon {
+    margin: 0 auto 4px;
+    display: block;
+}
+
+.lumi-app-list-icon { width: 36px !important; height: 36px !important; }
+.lumi-context-icon { width: 18px; height: 18px; border-radius: 5px; }
