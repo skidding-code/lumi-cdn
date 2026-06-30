@@ -1,8 +1,8 @@
 (function () {
     'use strict';
 
-    var CDN_BASE = 'https://cdn.jsdelivr.net/gh/skidding-code/lumiv2@singlefile-assist/';
-    var LISTS_BASE = 'https://cdn.jsdelivr.net/gh/skidding-code/lumiv2@backends/';
+    var CDN_BASE = 'https://cdn.jsdelivr.net/gh/skidding-code/lumi-cdn@singlefile-assist/';
+    var LISTS_BASE = 'https://cdn.jsdelivr.net/gh/skidding-code/lumi-cdn@backends/';
     var DEFAULT_API = 'https://v2.quest';
     var DEFAULT_BACKEND = 'scramjet2';
     var RUNTIME_URL = CDN_BASE + 'single-runtime.js';
